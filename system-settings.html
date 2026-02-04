@@ -1,0 +1,1861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>System Settings | iBlue Commerce</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    /* ===== MOBILE-FIRST RESET & BASE STYLES ===== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    :root {
+      --primary: #003cff;
+      --primary-dark: #0028cc;
+      --secondary: #6c757d;
+      --success: #28a745;
+      --warning: #ffc107;
+      --danger: #dc3545;
+      --info: #17a2b8;
+      --light: #f8f9fa;
+      --dark: #343a40;
+      --sidebar-width: 250px;
+      --safe-area-top: env(safe-area-inset-top, 0px);
+      --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    html {
+      font-size: 14px;
+    }
+
+    body {
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Tahoma, Geneva, Verdana, sans-serif;
+      background: #f5f7fa;
+      color: #333;
+      min-height: 100vh;
+      min-height: -webkit-fill-available;
+      display: flex;
+      overflow-x: hidden;
+      line-height: 1.4;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* ===== TOUCH-FRIENDLY BUTTONS & INPUTS ===== */
+    button,
+    select,
+    input,
+    .btn,
+    .btn-icon,
+    .nav-item a {
+      min-height: 44px;
+      min-width: 44px;
+      touch-action: manipulation;
+    }
+
+    select,
+    input,
+    textarea {
+      font-size: 16px !important; /* Prevents iOS zoom */
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+    }
+
+    /* ===== SIDEBAR - MOBILE OVERLAY ===== */
+    .sidebar {
+      width: 100%;
+      max-width: 280px;
+      background: white;
+      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+      position: fixed;
+      height: 100vh;
+      height: -webkit-fill-available;
+      overflow-y: auto;
+      z-index: 1000;
+      transform: translateX(-100%);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      left: 0;
+      top: 0;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+    }
+
+    .sidebar.active {
+      transform: translateX(0);
+    }
+
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      backdrop-filter: blur(2px);
+    }
+
+    .sidebar-overlay.active {
+      display: block;
+    }
+
+    .sidebar-header {
+      padding: 25px 20px;
+      border-bottom: 1px solid #eaeaea;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: white;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 5px;
+    }
+
+    .logo i {
+      font-size: 1.8rem;
+    }
+
+    .logo span {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .admin-role {
+      font-size: 0.85rem;
+      opacity: 0.9;
+      margin-left: 42px;
+    }
+
+    .user-info {
+      padding: 20px;
+      border-bottom: 1px solid #eaeaea;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .user-avatar {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 600;
+      font-size: 1.2rem;
+      flex-shrink: 0;
+    }
+
+    .user-details h4 {
+      margin-bottom: 5px;
+      font-size: 1rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .user-details p {
+      color: var(--secondary);
+      font-size: 0.85rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .nav-menu {
+      list-style: none;
+      padding: 20px 0;
+    }
+
+    .nav-item {
+      margin-bottom: 5px;
+    }
+
+    .nav-item a {
+      display: flex;
+      align-items: center;
+      padding: 12px 20px;
+      color: #555;
+      text-decoration: none;
+      transition: all 0.3s;
+      border-left: 3px solid transparent;
+      white-space: nowrap;
+    }
+
+    .nav-item a:hover, .nav-item a.active {
+      background: rgba(0, 60, 255, 0.05);
+      color: var(--primary);
+      border-left-color: var(--primary);
+    }
+
+    .nav-item i {
+      width: 24px;
+      margin-right: 12px;
+      font-size: 1.1rem;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .nav-divider {
+      padding: 15px 20px;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      color: var(--secondary);
+      font-weight: 600;
+      letter-spacing: 1px;
+      white-space: nowrap;
+    }
+
+    .sidebar-footer {
+      padding: 20px;
+      border-top: 1px solid #eaeaea;
+      margin-top: auto;
+      position: sticky;
+      bottom: 0;
+      background: white;
+    }
+
+    /* ===== MOBILE MENU TOGGLE ===== */
+    .mobile-menu-toggle {
+      display: flex;
+      position: fixed;
+      top: 20px;
+      left: 15px;
+      z-index: 1001;
+      background: var(--primary);
+      color: white;
+      width: 50px;
+      height: 50px;
+      border-radius: 10px;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 4px 12px rgba(0, 60, 255, 0.3);
+    }
+
+    /* ===== MAIN CONTENT - MOBILE OPTIMIZED ===== */
+    .main-content {
+      flex: 1;
+      padding: 20px 15px 30px;
+      min-height: 100vh;
+      width: 100%;
+      padding-top: 70px; /* Space for mobile toggle */
+    }
+
+    .top-bar {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      margin-bottom: 25px;
+      padding: 20px 15px;
+      border-bottom: 1px solid #eaeaea;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      position: relative;
+      margin-top: 10px;
+    }
+
+    .page-title h1 {
+      font-size: 1.5rem;
+      color: var(--dark);
+      margin-bottom: 5px;
+      line-height: 1.2;
+    }
+
+    .page-title p {
+      color: var(--secondary);
+      font-size: 0.9rem;
+      line-height: 1.3;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      justify-content: flex-start;
+    }
+
+    .btn {
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.3s;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover, .btn-primary:active {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0, 60, 255, 0.2);
+    }
+
+    .btn-success {
+      background: var(--success);
+      color: white;
+    }
+
+    .btn-warning {
+      background: var(--warning);
+      color: var(--dark);
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: white;
+    }
+
+    .btn-light {
+      background: var(--light);
+      color: var(--dark);
+      border: 1px solid #ddd;
+    }
+
+    /* ===== SETTINGS CONTAINER ===== */
+    .settings-container {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      margin-bottom: 30px;
+    }
+
+    .settings-section {
+      margin-bottom: 30px;
+      padding-bottom: 25px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .settings-section:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+      color: var(--dark);
+      font-size: 1.1rem;
+    }
+
+    .section-title i {
+      color: var(--primary);
+      width: 24px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+
+    @media (min-width: 768px) {
+      .form-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: var(--dark);
+      font-size: 0.9rem;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 14px 15px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      font-size: 16px;
+      background: white;
+      transition: all 0.3s;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(0, 60, 255, 0.1);
+    }
+
+    .form-group textarea {
+      min-height: 100px;
+      resize: vertical;
+      line-height: 1.4;
+    }
+
+    .form-group small {
+      display: block;
+      margin-top: 5px;
+      color: var(--secondary);
+      font-size: 0.8rem;
+    }
+
+    .toggle-switch {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 15px;
+      background: var(--light);
+      border-radius: 10px;
+      margin-bottom: 10px;
+    }
+
+    .toggle-label {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .toggle-label span:first-child {
+      font-weight: 500;
+      color: var(--dark);
+    }
+
+    .toggle-label span:last-child {
+      font-size: 0.8rem;
+      color: var(--secondary);
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 60px;
+      height: 34px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 34px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 26px;
+      width: 26px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: var(--primary);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(26px);
+    }
+
+    /* ===== PREVIEW AREA ===== */
+    .preview-area {
+      background: var(--light);
+      border-radius: 10px;
+      padding: 20px;
+      margin-top: 20px;
+      text-align: center;
+      border: 2px dashed #ddd;
+    }
+
+    .preview-logo {
+      max-width: 200px;
+      max-height: 80px;
+      margin-bottom: 15px;
+    }
+
+    /* ===== MODAL ===== */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 2000;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 400px;
+      max-height: 90vh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      animation: slideUp 0.3s ease;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .modal-header {
+      padding: 20px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      background: white;
+      z-index: 1;
+      border-radius: 16px 16px 0 0;
+    }
+
+    .modal-header h3 {
+      font-size: 1.2rem;
+      color: var(--dark);
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 1.8rem;
+      cursor: pointer;
+      color: var(--secondary);
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-body {
+      padding: 20px;
+    }
+
+    .modal-footer {
+      padding: 20px;
+      border-top: 1px solid #eee;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      position: sticky;
+      bottom: 0;
+      background: white;
+      border-radius: 0 0 16px 16px;
+    }
+
+    /* ===== LOADING SPINNER ===== */
+    .loading-spinner {
+      display: none;
+      justify-content: center;
+      align-items: center;
+      padding: 40px;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid rgba(0, 60, 255, 0.1);
+      border-radius: 50%;
+      border-top-color: var(--primary);
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* ===== EMPTY STATE ===== */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--secondary);
+    }
+
+    .empty-state i {
+      font-size: 4rem;
+      margin-bottom: 20px;
+      color: #ddd;
+    }
+
+    .empty-state h3 {
+      font-size: 1.3rem;
+      margin-bottom: 10px;
+      color: var(--dark);
+    }
+
+    .empty-state p {
+      font-size: 1rem;
+      max-width: 400px;
+      margin: 0 auto 20px;
+    }
+
+    /* ===== RESPONSIVE BREAKPOINTS ===== */
+    @media (min-width: 480px) {
+      html {
+        font-size: 15px;
+      }
+      
+      .main-content {
+        padding: 20px 20px 30px;
+      }
+    }
+
+    @media (min-width: 768px) {
+      html {
+        font-size: 16px;
+      }
+      
+      .sidebar {
+        transform: translateX(0);
+        position: sticky;
+        top: 0;
+        max-width: var(--sidebar-width);
+      }
+      
+      .sidebar-overlay {
+        display: none !important;
+      }
+      
+      .mobile-menu-toggle {
+        display: none;
+      }
+      
+      .main-content {
+        margin-left: var(--sidebar-width);
+        padding: 30px;
+        padding-top: 30px;
+      }
+      
+      .top-bar {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+      }
+      
+      .top-actions {
+        width: auto;
+        justify-content: flex-end;
+      }
+    }
+
+    /* ===== BOTTOM NAVIGATION FOR MOBILE ===== */
+    .bottom-nav {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      border-top: 1px solid #eaeaea;
+      padding: 10px 0;
+      z-index: 1000;
+      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    @media (max-width: 767px) {
+      .bottom-nav {
+        display: flex;
+        justify-content: space-around;
+        padding-bottom: max(10px, var(--safe-area-bottom));
+      }
+      
+      .bottom-nav-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        text-decoration: none;
+        color: var(--secondary);
+        font-size: 0.75rem;
+        padding: 8px 12px;
+        border-radius: 8px;
+        transition: all 0.3s;
+      }
+      
+      .bottom-nav-item.active {
+        color: var(--primary);
+        background: rgba(0, 60, 255, 0.05);
+      }
+      
+      .bottom-nav-item i {
+        font-size: 1.2rem;
+      }
+    }
+
+    /* ===== ALERTS ===== */
+    .alert {
+      padding: 15px 20px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      animation: slideDown 0.3s ease;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .alert-success {
+      background: rgba(40, 167, 69, 0.1);
+      color: var(--success);
+      border-left: 4px solid var(--success);
+    }
+
+    .alert-error {
+      background: rgba(220, 53, 69, 0.1);
+      color: var(--danger);
+      border-left: 4px solid var(--danger);
+    }
+
+    .alert-warning {
+      background: rgba(255, 193, 7, 0.1);
+      color: #b38b00;
+      border-left: 4px solid var(--warning);
+    }
+
+    .alert-info {
+      background: rgba(23, 162, 184, 0.1);
+      color: var(--info);
+      border-left: 4px solid var(--info);
+    }
+  </style>
+</head>
+<body>
+  <!-- Mobile Menu Toggle -->
+  <button class="mobile-menu-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">
+    <i class="fas fa-bars"></i>
+  </button>
+
+  <!-- Sidebar Overlay -->
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+  <!-- Sidebar -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <i class="fas fa-shopping-bag" aria-hidden="true"></i>
+        <span>iBlue</span>
+      </div>
+      <div class="admin-role">System Settings</div>
+    </div>
+
+    <div class="user-info">
+      <div class="user-avatar" id="userAvatar" aria-label="User avatar">U</div>
+      <div class="user-details">
+        <h4 id="userName">User</h4>
+        <p id="userEmail">user@example.com</p>
+      </div>
+    </div>
+
+    <ul class="nav-menu">
+      <li class="nav-item"><a href="index.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+      <li class="nav-item"><a href="admin-products.html"><i class="fas fa-box"></i> Products</a></li>
+      <li class="nav-item"><a href="admin-orders.html"><i class="fas fa-shopping-cart"></i> Orders</a></li>
+      <li class="nav-item"><a href="admin-customers.html"><i class="fas fa-users"></i> Customers</a></li>
+      <li class="nav-item"><a href="analytics.html"><i class="fas fa-chart-bar"></i> Analytics</a></li>
+      
+      <li class="nav-divider">Management</li>
+      
+      <li class="nav-item"><a href="admin-add-product.html"><i class="fas fa-plus-circle"></i> Add Product</a></li>
+      <li class="nav-item"><a href="categories.html"><i class="fas fa-tags"></i> Categories</a></li>
+      <li class="nav-item"><a href="inventory.html"><i class="fas fa-warehouse"></i> Inventory</a></li>
+      <li class="nav-item"><a href="sales-reports.html"><i class="fas fa-file-invoice-dollar"></i> Sales Reports</a></li>
+      
+      <li class="nav-divider">Settings</li>
+      
+      <li class="nav-item"><a href="system-settings.html" class="active"><i class="fas fa-cog"></i> System Settings</a></li>
+      <li class="nav-item"><a href="admin-users.html"><i class="fas fa-user-cog"></i> Admin Users</a></li>
+      <li class="nav-item"><a href="roles-permissions.html"><i class="fas fa-user-shield"></i> Roles & Permissions</a></li>
+      <li class="nav-item"><a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+    </ul>
+
+    <div class="sidebar-footer">
+      <div style="font-size: 0.8rem; color: var(--secondary); text-align: center;">
+        <p><i class="fas fa-shield-alt"></i> Secure Admin Portal</p>
+        <p>v2.1.4 • Last login: <span id="lastLoginTime">Today</span></p>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Bottom Navigation for Mobile -->
+  <div class="bottom-nav">
+    <a href="index.html" class="bottom-nav-item">
+      <i class="fas fa-tachometer-alt"></i>
+      <span>Dashboard</span>
+    </a>
+    <a href="admin-products.html" class="bottom-nav-item">
+      <i class="fas fa-box"></i>
+      <span>Products</span>
+    </a>
+    <a href="admin-orders.html" class="bottom-nav-item">
+      <i class="fas fa-shopping-cart"></i>
+      <span>Orders</span>
+    </a>
+    <a href="admin-customers.html" class="bottom-nav-item">
+      <i class="fas fa-users"></i>
+      <span>Customers</span>
+    </a>
+  </div>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Top Bar -->
+    <div class="top-bar">
+      <div class="page-title">
+        <h1>System Settings</h1>
+        <p>Configure your store's global settings and preferences</p>
+      </div>
+      
+      <div class="top-actions">
+        <button class="btn btn-primary" onclick="saveAllSettings()">
+          <i class="fas fa-save"></i> Save All Settings
+        </button>
+        <button class="btn btn-light" onclick="resetToDefaults()">
+          <i class="fas fa-undo"></i> Reset Defaults
+        </button>
+      </div>
+    </div>
+
+    <!-- Alert Container -->
+    <div id="alertContainer"></div>
+
+    <!-- Loading Spinner -->
+    <div class="loading-spinner" id="loadingSpinner">
+      <div class="spinner"></div>
+      <span>Loading system settings...</span>
+    </div>
+
+    <!-- Settings Container -->
+    <div class="settings-container" id="settingsContainer">
+      <!-- Empty State -->
+      <div class="empty-state" id="emptySettings" style="display: none;">
+        <i class="fas fa-cog"></i>
+        <h3>No Settings Configured</h3>
+        <p>System settings haven't been configured yet. You can set up your store settings below.</p>
+      </div>
+
+      <!-- General Settings -->
+      <div class="settings-section">
+        <div class="section-title">
+          <i class="fas fa-globe"></i>
+          <h3>General Settings</h3>
+        </div>
+        
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="siteName">Website Name *</label>
+            <input type="text" id="siteName" placeholder="Your Store Name" required>
+            <small>The name of your online store</small>
+          </div>
+          
+          <div class="form-group">
+            <label for="siteTagline">Website Tagline</label>
+            <input type="text" id="siteTagline" placeholder="A short description of your store">
+            <small>A short description of your store</small>
+          </div>
+          
+          <div class="form-group">
+            <label for="defaultCurrency">Default Currency *</label>
+            <select id="defaultCurrency">
+              <option value="UGX">UGX - Ugandan Shilling</option>
+              <option value="USD">USD - US Dollar</option>
+              <option value="EUR">EUR - Euro</option>
+              <option value="GBP">GBP - British Pound</option>
+              <option value="KES">KES - Kenyan Shilling</option>
+              <option value="TZS">TZS - Tanzanian Shilling</option>
+            </select>
+            <small>Primary currency for your store</small>
+          </div>
+          
+          <div class="form-group">
+            <label for="defaultTimezone">Default Timezone *</label>
+            <select id="defaultTimezone">
+              <option value="Africa/Kampala">EAT - East Africa Time (Uganda)</option>
+              <option value="Africa/Nairobi">EAT - East Africa Time (Kenya)</option>
+              <option value="Africa/Dar_es_Salaam">EAT - East Africa Time (Tanzania)</option>
+              <option value="UTC">UTC - Coordinated Universal Time</option>
+              <option value="America/New_York">EST - Eastern Time</option>
+              <option value="Europe/London">GMT - London</option>
+            </select>
+            <small>Time zone for order timestamps and reports</small>
+          </div>
+          
+          <div class="form-group">
+            <label for="defaultLanguage">Default Language *</label>
+            <select id="defaultLanguage">
+              <option value="en">English</option>
+              <option value="sw">Swahili</option>
+              <option value="fr">French</option>
+              <option value="es">Spanish</option>
+            </select>
+            <small>Primary language for your store</small>
+          </div>
+          
+          <div class="form-group">
+            <label for="contactEmail">Contact Email *</label>
+            <input type="email" id="contactEmail" placeholder="contact@yourstore.com" required>
+            <small>Email address for customer inquiries</small>
+          </div>
+
+          <div class="form-group">
+            <label for="storePhone">Store Phone Number</label>
+            <input type="tel" id="storePhone" placeholder="+256 XXX XXX XXX">
+            <small>Contact phone number for your store</small>
+          </div>
+
+          <div class="form-group">
+            <label for="storeAddress">Store Address</label>
+            <textarea id="storeAddress" placeholder="Physical address of your store"></textarea>
+            <small>Physical business address</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Branding -->
+      <div class="settings-section">
+        <div class="section-title">
+          <i class="fas fa-palette"></i>
+          <h3>Branding & Appearance</h3>
+        </div>
+        
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="logoUrl">Logo URL</label>
+            <input type="url" id="logoUrl" placeholder="https://yourdomain.com/logo.png">
+            <small>Full URL to your store logo (PNG, JPG, or SVG)</small>
+          </div>
+          
+          <div class="form-group">
+            <label for="faviconUrl">Favicon URL</label>
+            <input type="url" id="faviconUrl" placeholder="https://yourdomain.com/favicon.ico">
+            <small>URL to your favicon (16x16 or 32x32 pixels)</small>
+          </div>
+          
+          <div class="form-group">
+            <label for="primaryColor">Primary Color</label>
+            <input type="color" id="primaryColor" value="#003cff">
+            <small>Main brand color for buttons and links</small>
+          </div>
+          
+          <div class="form-group">
+            <label for="secondaryColor">Secondary Color</label>
+            <input type="color" id="secondaryColor" value="#6c757d">
+            <small>Secondary color for backgrounds and borders</small>
+          </div>
+        </div>
+        
+        <!-- Logo Preview -->
+        <div class="preview-area" id="logoPreview">
+          <p>Logo Preview</p>
+          <img id="previewLogo" src="" alt="Logo preview" class="preview-logo" style="display: none;">
+          <p id="previewText" style="color: #666; font-size: 0.9rem;">No logo selected</p>
+          <button class="btn btn-light" onclick="updateLogoPreview()" style="margin-top: 10px;">
+            <i class="fas fa-sync"></i> Update Preview
+          </button>
+        </div>
+      </div>
+
+      <!-- Store Configuration -->
+      <div class="settings-section">
+        <div class="section-title">
+          <i class="fas fa-store"></i>
+          <h3>Store Configuration</h3>
+        </div>
+        
+        <div class="toggle-switch">
+          <div class="toggle-label">
+            <span>Store Maintenance Mode</span>
+            <span>When enabled, only administrators can access the store</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="maintenanceMode">
+            <span class="slider"></span>
+          </label>
+        </div>
+        
+        <div class="toggle-switch">
+          <div class="toggle-label">
+            <span>Require Account Registration</span>
+            <span>Customers must create an account to place orders</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="requireRegistration">
+            <span class="slider"></span>
+          </label>
+        </div>
+        
+        <div class="toggle-switch">
+          <div class="toggle-label">
+            <span>Enable Guest Checkout</span>
+            <span>Allow customers to checkout without creating an account</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="guestCheckout" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+        
+        <div class="toggle-switch">
+          <div class="toggle-label">
+            <span>Enable Product Reviews</span>
+            <span>Allow customers to leave reviews on products</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="productReviews" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+        
+        <div class="toggle-switch">
+          <div class="toggle-label">
+            <span>Auto-Approve Reviews</span>
+            <span>Automatically publish reviews without moderation</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="autoApproveReviews">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Payment & Shipping -->
+      <div class="settings-section">
+        <div class="section-title">
+          <i class="fas fa-credit-card"></i>
+          <h3>Payment & Shipping</h3>
+        </div>
+        
+        <div class="form-group">
+          <label for="defaultPaymentMethod">Default Payment Method *</label>
+          <select id="defaultPaymentMethod">
+            <option value="mobile_money">Mobile Money</option>
+            <option value="bank_transfer">Bank Transfer</option>
+            <option value="cash_on_delivery">Cash on Delivery</option>
+            <option value="credit_card">Credit Card</option>
+            <option value="paypal">PayPal</option>
+          </select>
+          <small>Primary payment method for your store</small>
+        </div>
+        
+        <div class="toggle-switch">
+          <div class="toggle-label">
+            <span>Enable Test Mode</span>
+            <span>Use sandbox environments for payment processing</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="testMode">
+            <span class="slider"></span>
+          </label>
+        </div>
+        
+        <div class="toggle-switch">
+          <div class="toggle-label">
+            <span>Enable Free Shipping Threshold</span>
+            <span>Offer free shipping for orders above a certain amount</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="freeShippingEnabled">
+            <span class="slider"></span>
+          </label>
+        </div>
+        
+        <div class="form-group" id="freeShippingThresholdContainer" style="display: none;">
+          <label for="freeShippingThreshold">Free Shipping Minimum Order (UGX)</label>
+          <input type="number" id="freeShippingThreshold" placeholder="50000" min="0" step="1000">
+          <small>Order amount required for free shipping</small>
+        </div>
+        
+        <div class="form-group">
+          <label for="taxRate">Default Tax Rate (%)</label>
+          <input type="number" id="taxRate" placeholder="18" min="0" max="100" step="0.1">
+          <small>VAT rate applied to orders in Uganda</small>
+        </div>
+
+        <div class="form-group">
+          <label for="shippingCost">Default Shipping Cost (UGX)</label>
+          <input type="number" id="shippingCost" placeholder="10000" min="0" step="1000">
+          <small>Standard shipping cost for orders</small>
+        </div>
+      </div>
+
+      <!-- Advanced Settings -->
+      <div class="settings-section">
+        <div class="section-title">
+          <i class="fas fa-sliders-h"></i>
+          <h3>Advanced Settings</h3>
+        </div>
+        
+        <div class="form-group">
+          <label for="apiKey">API Key</label>
+          <div style="display: flex; gap: 10px;">
+            <input type="text" id="apiKey" readonly style="flex: 1;">
+            <button type="button" class="btn btn-light" onclick="generateApiKey()" style="white-space: nowrap;">
+              <i class="fas fa-sync"></i> Generate
+            </button>
+          </div>
+          <small>API key for external integrations</small>
+        </div>
+        
+        <div class="form-group">
+          <label for="sessionTimeout">Session Timeout (minutes)</label>
+          <input type="number" id="sessionTimeout" placeholder="30" min="5" max="480">
+          <small>Admin session timeout duration</small>
+        </div>
+        
+        <div class="toggle-switch">
+          <div class="toggle-label">
+            <span>Enable Analytics Tracking</span>
+            <span>Track store analytics and customer behavior</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="analyticsEnabled" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+        
+        <div class="toggle-switch">
+          <div class="toggle-label">
+            <span>Enable Error Logging</span>
+            <span>Log system errors for debugging</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="errorLogging" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Email Settings (SMTP) -->
+      <div class="settings-section">
+        <div class="section-title">
+          <i class="fas fa-envelope"></i>
+          <h3>Email Settings (SMTP)</h3>
+        </div>
+        
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="smtpHost">SMTP Host</label>
+            <input type="text" id="smtpHost" placeholder="smtp.yourdomain.com">
+            <small>SMTP server hostname</small>
+          </div>
+          
+          <div class="form-group">
+            <label for="smtpPort">SMTP Port</label>
+            <input type="text" id="smtpPort" placeholder="587">
+            <small>SMTP server port (587 for TLS, 465 for SSL)</small>
+          </div>
+          
+          <div class="form-group">
+            <label for="smtpUsername">SMTP Username</label>
+            <input type="text" id="smtpUsername" placeholder="your@email.com">
+            <small>SMTP authentication username</small>
+          </div>
+          
+          <div class="form-group">
+            <label for="smtpPassword">SMTP Password</label>
+            <input type="password" id="smtpPassword" placeholder="••••••••">
+            <small>SMTP authentication password</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+        <button class="btn btn-primary" onclick="saveAllSettings()">
+          <i class="fas fa-save"></i> Save All Settings
+        </button>
+        <button class="btn btn-light" onclick="clearCache()">
+          <i class="fas fa-broom"></i> Clear Cache
+        </button>
+        <button class="btn btn-danger" onclick="showResetModal()">
+          <i class="fas fa-trash-alt"></i> Clear All Settings
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <!-- Reset Confirmation Modal -->
+  <div class="modal" id="resetModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Reset Settings</h3>
+        <button class="modal-close" onclick="closeModal('resetModal')" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="margin-bottom: 15px;">Are you sure you want to reset all settings to their default values?</p>
+        <p style="color: var(--danger); font-weight: 500;">
+          <i class="fas fa-exclamation-triangle"></i> This action cannot be undone.
+        </p>
+        <div class="form-group" style="margin-top: 20px;">
+          <label for="confirmReset">Type "RESET" to confirm:</label>
+          <input type="text" id="confirmReset" placeholder="Type RESET here">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-light" onclick="closeModal('resetModal')">Cancel</button>
+        <button class="btn btn-danger" onclick="confirmReset()" id="resetConfirmBtn" disabled>Reset All Settings</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Initialize Supabase client
+    const supabaseUrl = "https://amxhpxqakqrjjihwkzcq.supabase.co";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFteGhweHFha3FyamppaHdremNxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5Nzc2NjUsImV4cCI6MjA4MzU1MzY2NX0.yIAZtz3bUc_ZxF8-f4cqW1fKJgFiRsiJdj4qgCDmM0g";
+    
+    const sb = supabase.createClient(supabaseUrl, supabaseKey);
+    
+    // Current user
+    let currentUser = null;
+    let currentSettingsId = null;
+
+    // Initialize settings page
+    document.addEventListener('DOMContentLoaded', async function() {
+      await checkAdminAuth();
+      await loadSettings();
+      setupEventListeners();
+    });
+
+    // Check admin authentication
+    async function checkAdminAuth() {
+      const { data: { session } } = await sb.auth.getSession();
+      
+      if (!session) {
+        window.location.href = 'admin-login.html?redirect=unauthorized';
+        return;
+      }
+      
+      // Check if user is admin/seller
+      const { data: profile, error } = await sb
+        .from('user_profiles')
+        .select('*')
+        .eq('id', session.user.id)
+        .single();
+      
+      if (error || (!profile || (profile.account_type !== 'admin' && profile.account_type !== 'seller'))) {
+        window.location.href = 'admin-login.html?redirect=unauthorized';
+        return;
+      }
+      
+      currentUser = {
+        ...session.user,
+        profile: profile
+      };
+      
+      // Update UI with user info
+      document.getElementById('userName').textContent = profile.first_name || profile.username || 'User';
+      document.getElementById('userEmail').textContent = session.user.email;
+      document.getElementById('userAvatar').textContent = (profile.first_name?.[0] || profile.username?.[0] || 'U').toUpperCase();
+      
+      // Set last login time
+      const lastLogin = localStorage.getItem('lastAdminLogin');
+      if (lastLogin) {
+        document.getElementById('lastLoginTime').textContent = new Date(lastLogin).toLocaleDateString();
+      }
+    }
+
+    // Setup event listeners
+    function setupEventListeners() {
+      // Free shipping threshold toggle
+      const freeShippingToggle = document.getElementById('freeShippingEnabled');
+      if (freeShippingToggle) {
+        freeShippingToggle.addEventListener('change', function() {
+          const container = document.getElementById('freeShippingThresholdContainer');
+          if (container) {
+            container.style.display = this.checked ? 'block' : 'none';
+          }
+        });
+      }
+      
+      // Reset confirmation input
+      const confirmResetInput = document.getElementById('confirmReset');
+      if (confirmResetInput) {
+        confirmResetInput.addEventListener('input', function() {
+          const resetBtn = document.getElementById('resetConfirmBtn');
+          if (resetBtn) {
+            resetBtn.disabled = this.value.toUpperCase() !== 'RESET';
+          }
+        });
+      }
+      
+      // Close sidebar when clicking outside on mobile
+      document.addEventListener('click', function(event) {
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        const mobileToggle = document.querySelector('.mobile-menu-toggle');
+        
+        if (window.innerWidth <= 768 && 
+            sidebar && 
+            mobileToggle &&
+            !sidebar.contains(event.target) && 
+            !mobileToggle.contains(event.target) &&
+            sidebar.classList.contains('active')) {
+          toggleSidebar();
+        }
+      });
+      
+      // Handle keyboard shortcuts
+      document.addEventListener('keydown', function(e) {
+        // Ctrl/Cmd + S to save
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+          e.preventDefault();
+          saveAllSettings();
+        }
+        
+        // Escape to close modals
+        if (e.key === 'Escape') {
+          closeModal('resetModal');
+        }
+      });
+    }
+
+    // Toggle sidebar on mobile
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+      if (sidebar && overlay) {
+        sidebar.classList.toggle('active');
+        overlay.classList.toggle('active');
+      }
+    }
+
+    // Load settings from database
+    async function loadSettings() {
+      const loading = document.getElementById('loadingSpinner');
+      const container = document.getElementById('settingsContainer');
+      const emptyState = document.getElementById('emptySettings');
+      
+      if (loading) loading.style.display = 'flex';
+      if (container) container.style.opacity = '0.5';
+      
+      try {
+        // Try to fetch settings from Supabase
+        const { data: settings, error } = await sb
+          .from('system_settings')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(1);
+        
+        if (error && error.code !== 'PGRST116') {
+          console.error('Error loading settings:', error);
+          // Show empty state and use defaults
+          if (emptyState) emptyState.style.display = 'block';
+          setDefaultSettings();
+        } else if (settings && settings.length > 0) {
+          const setting = settings[0];
+          currentSettingsId = setting.id;
+          
+          // Hide empty state
+          if (emptyState) emptyState.style.display = 'none';
+          
+          // General Settings
+          setValueIfExists('siteName', setting.site_name);
+          setValueIfExists('siteTagline', setting.site_tagline);
+          setValueIfExists('defaultCurrency', setting.default_currency);
+          setValueIfExists('defaultTimezone', setting.default_timezone);
+          setValueIfExists('defaultLanguage', setting.default_language);
+          setValueIfExists('contactEmail', setting.contact_email);
+          setValueIfExists('storePhone', setting.store_phone);
+          setValueIfExists('storeAddress', setting.store_address);
+          
+          // Branding
+          setValueIfExists('logoUrl', setting.logo_url);
+          setValueIfExists('faviconUrl', setting.favicon_url);
+          setValueIfExists('primaryColor', setting.primary_color || '#003cff');
+          setValueIfExists('secondaryColor', setting.secondary_color || '#6c757d');
+          
+          // Store Configuration
+          setCheckboxIfExists('maintenanceMode', setting.maintenance_mode);
+          setCheckboxIfExists('requireRegistration', setting.require_registration);
+          setCheckboxIfExists('guestCheckout', setting.guest_checkout !== undefined ? setting.guest_checkout : true);
+          setCheckboxIfExists('productReviews', setting.product_reviews !== undefined ? setting.product_reviews : true);
+          setCheckboxIfExists('autoApproveReviews', setting.auto_approve_reviews);
+          
+          // Payment & Shipping
+          setValueIfExists('defaultPaymentMethod', setting.default_payment_method || 'mobile_money');
+          setCheckboxIfExists('testMode', setting.test_mode);
+          setCheckboxIfExists('freeShippingEnabled', setting.free_shipping_enabled);
+          setValueIfExists('freeShippingThreshold', setting.free_shipping_threshold || '50000');
+          setValueIfExists('taxRate', setting.tax_rate || '18');
+          setValueIfExists('shippingCost', setting.shipping_cost || '10000');
+          
+          // Advanced Settings
+          setValueIfExists('apiKey', setting.api_key || generateApiKey());
+          setValueIfExists('sessionTimeout', setting.session_timeout || '30');
+          setCheckboxIfExists('analyticsEnabled', setting.analytics_enabled !== undefined ? setting.analytics_enabled : true);
+          setCheckboxIfExists('errorLogging', setting.error_logging !== undefined ? setting.error_logging : true);
+          
+          // SMTP Settings
+          setValueIfExists('smtpHost', setting.smtp_host);
+          setValueIfExists('smtpPort', setting.smtp_port);
+          setValueIfExists('smtpUsername', setting.smtp_username);
+          setValueIfExists('smtpPassword', setting.smtp_password);
+          
+          // Update UI based on loaded values
+          const freeShippingContainer = document.getElementById('freeShippingThresholdContainer');
+          if (freeShippingContainer) {
+            freeShippingContainer.style.display = setting.free_shipping_enabled ? 'block' : 'none';
+          }
+          
+          // Update logo preview if exists
+          if (setting.logo_url) {
+            updateLogoPreview();
+          }
+        } else {
+          // No settings found, show empty state
+          if (emptyState) emptyState.style.display = 'block';
+          setDefaultSettings();
+        }
+        
+      } catch (error) {
+        console.error('Error loading settings:', error);
+        if (emptyState) emptyState.style.display = 'block';
+        setDefaultSettings();
+        showAlert('error', 'Error loading settings. Using default values.');
+      } finally {
+        if (loading) loading.style.display = 'none';
+        if (container) container.style.opacity = '1';
+      }
+    }
+
+    // Helper function to set value if element exists
+    function setValueIfExists(elementId, value) {
+      const element = document.getElementById(elementId);
+      if (element && value !== undefined && value !== null) {
+        element.value = value;
+      }
+    }
+
+    // Helper function to set checkbox if element exists
+    function setCheckboxIfExists(elementId, value) {
+      const element = document.getElementById(elementId);
+      if (element) {
+        element.checked = !!value;
+      }
+    }
+
+    // Set default settings
+    function setDefaultSettings() {
+      // Set Uganda-specific defaults
+      setValueIfExists('defaultCurrency', 'UGX');
+      setValueIfExists('defaultTimezone', 'Africa/Kampala');
+      setValueIfExists('defaultPaymentMethod', 'mobile_money');
+      setValueIfExists('freeShippingThreshold', '50000');
+      setValueIfExists('shippingCost', '10000');
+      setValueIfExists('taxRate', '18');
+      setValueIfExists('apiKey', generateApiKey());
+      setValueIfExists('guestCheckout', true);
+      setValueIfExists('productReviews', true);
+      setValueIfExists('analyticsEnabled', true);
+      setValueIfExists('errorLogging', true);
+    }
+
+    // Save all settings
+    async function saveAllSettings() {
+      const loading = document.getElementById('loadingSpinner');
+      const emptyState = document.getElementById('emptySettings');
+      
+      // Validate required fields
+      const siteName = document.getElementById('siteName')?.value?.trim() || '';
+      const contactEmail = document.getElementById('contactEmail')?.value?.trim() || '';
+      
+      if (!siteName) {
+        showAlert('error', 'Website name is required');
+        return;
+      }
+      
+      if (!contactEmail) {
+        showAlert('error', 'Contact email is required');
+        return;
+      }
+      
+      if (loading) loading.style.display = 'flex';
+      
+      // Get all values from form
+      const settings = {
+        // General Settings
+        site_name: siteName,
+        site_tagline: getValue('siteTagline'),
+        default_currency: getValue('defaultCurrency') || 'UGX',
+        default_timezone: getValue('defaultTimezone') || 'Africa/Kampala',
+        default_language: getValue('defaultLanguage') || 'en',
+        contact_email: contactEmail,
+        store_phone: getValue('storePhone'),
+        store_address: getValue('storeAddress'),
+        
+        // Branding
+        logo_url: getValue('logoUrl'),
+        favicon_url: getValue('faviconUrl'),
+        primary_color: getValue('primaryColor') || '#003cff',
+        secondary_color: getValue('secondaryColor') || '#6c757d',
+        
+        // Store Configuration
+        maintenance_mode: getCheckbox('maintenanceMode'),
+        require_registration: getCheckbox('requireRegistration'),
+        guest_checkout: getCheckbox('guestCheckout'),
+        product_reviews: getCheckbox('productReviews'),
+        auto_approve_reviews: getCheckbox('autoApproveReviews'),
+        
+        // Payment & Shipping
+        default_payment_method: getValue('defaultPaymentMethod') || 'mobile_money',
+        test_mode: getCheckbox('testMode'),
+        free_shipping_enabled: getCheckbox('freeShippingEnabled'),
+        free_shipping_threshold: getNumber('freeShippingThreshold'),
+        tax_rate: getNumber('taxRate'),
+        shipping_cost: getNumber('shippingCost'),
+        
+        // Advanced Settings
+        api_key: getValue('apiKey') || generateApiKey(),
+        session_timeout: getNumber('sessionTimeout'),
+        analytics_enabled: getCheckbox('analyticsEnabled'),
+        error_logging: getCheckbox('errorLogging'),
+        
+        // SMTP Settings
+        smtp_host: getValue('smtpHost'),
+        smtp_port: getValue('smtpPort'),
+        smtp_username: getValue('smtpUsername'),
+        smtp_password: getValue('smtpPassword'),
+        
+        updated_at: new Date().toISOString(),
+        updated_by: currentUser?.id || 'system'
+      };
+      
+      // Add ID if updating existing settings
+      if (currentSettingsId) {
+        settings.id = currentSettingsId;
+      }
+      
+      try {
+        // Save to Supabase
+        const { data, error } = await sb
+          .from('system_settings')
+          .upsert(settings, { onConflict: 'id' });
+        
+        if (error) throw error;
+        
+        // Store the ID if this is a new record
+        if (data && data.length > 0) {
+          currentSettingsId = data[0].id;
+        }
+        
+        // Hide empty state
+        if (emptyState) emptyState.style.display = 'none';
+        
+        showAlert('success', 'Settings saved successfully!');
+        
+        // Update logo preview
+        updateLogoPreview();
+        
+      } catch (error) {
+        console.error('Error saving settings:', error);
+        showAlert('error', 'Error saving settings: ' + error.message);
+      } finally {
+        if (loading) loading.style.display = 'none';
+      }
+    }
+
+    // Helper function to get value
+    function getValue(elementId) {
+      const element = document.getElementById(elementId);
+      return element ? element.value.trim() : '';
+    }
+
+    // Helper function to get checkbox value
+    function getCheckbox(elementId) {
+      const element = document.getElementById(elementId);
+      return element ? element.checked : false;
+    }
+
+    // Helper function to get number value
+    function getNumber(elementId) {
+      const element = document.getElementById(elementId);
+      if (!element || !element.value) return null;
+      const value = parseFloat(element.value);
+      return isNaN(value) ? null : value;
+    }
+
+    // Update logo preview
+    function updateLogoPreview() {
+      const logoUrl = getValue('logoUrl');
+      const preview = document.getElementById('previewLogo');
+      const previewText = document.getElementById('previewText');
+      
+      if (preview && previewText) {
+        if (logoUrl) {
+          preview.src = logoUrl;
+          preview.style.display = 'block';
+          previewText.style.display = 'none';
+        } else {
+          preview.style.display = 'none';
+          previewText.style.display = 'block';
+          previewText.textContent = 'No logo selected';
+        }
+      }
+    }
+
+    // Generate API key
+    function generateApiKey() {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+      let key = 'ib_';
+      for (let i = 0; i < 32; i++) {
+        key += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      key += '_' + Date.now().toString(36);
+      
+      // Update the API key field if it exists
+      const apiKeyField = document.getElementById('apiKey');
+      if (apiKeyField) {
+        apiKeyField.value = key;
+      }
+      
+      return key;
+    }
+
+    // Show alert message
+    function showAlert(type, message) {
+      const alertContainer = document.getElementById('alertContainer');
+      if (!alertContainer) return;
+      
+      // Remove existing alerts
+      const existingAlerts = alertContainer.querySelectorAll('.alert');
+      existingAlerts.forEach(alert => alert.remove());
+      
+      const alert = document.createElement('div');
+      alert.className = `alert alert-${type}`;
+      alert.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'exclamation-triangle'}"></i>
+        <span>${message}</span>
+      `;
+      
+      alertContainer.appendChild(alert);
+      
+      // Auto-remove after 5 seconds
+      setTimeout(() => {
+        alert.style.opacity = '0';
+        alert.style.transform = 'translateY(-10px)';
+        setTimeout(() => {
+          if (alert.parentNode) {
+            alert.parentNode.removeChild(alert);
+          }
+        }, 300);
+      }, 5000);
+    }
+
+    // Clear cache
+    function clearCache() {
+      // Clear localStorage cache
+      localStorage.removeItem('cachedSettings');
+      
+      // Show success message
+      showAlert('success', 'Cache cleared successfully!');
+      
+      // Reload settings
+      setTimeout(() => {
+        loadSettings();
+      }, 500);
+    }
+
+    // Reset to defaults
+    function resetToDefaults() {
+      if (!confirm('Are you sure you want to reset all settings to default values?')) {
+        return;
+      }
+      
+      // Reset all form fields to empty/default
+      const elements = document.querySelectorAll('input, select, textarea');
+      elements.forEach(element => {
+        if (element.type === 'checkbox') {
+          // Set checkboxes to default checked state
+          if (element.id === 'guestCheckout' || element.id === 'productReviews' || 
+              element.id === 'analyticsEnabled' || element.id === 'errorLogging') {
+            element.checked = true;
+          } else {
+            element.checked = false;
+          }
+        } else if (element.type === 'color') {
+          // Set color pickers to defaults
+          if (element.id === 'primaryColor') {
+            element.value = '#003cff';
+          } else if (element.id === 'secondaryColor') {
+            element.value = '#6c757d';
+          }
+        } else if (element.tagName === 'SELECT') {
+          // Set select fields to Uganda defaults
+          if (element.id === 'defaultCurrency') {
+            element.value = 'UGX';
+          } else if (element.id === 'defaultTimezone') {
+            element.value = 'Africa/Kampala';
+          } else if (element.id === 'defaultLanguage') {
+            element.value = 'en';
+          } else if (element.id === 'defaultPaymentMethod') {
+            element.value = 'mobile_money';
+          } else {
+            element.value = '';
+          }
+        } else if (element.type !== 'button' && element.type !== 'submit') {
+          // Clear other input fields
+          element.value = '';
+        }
+      });
+      
+      // Set specific default values
+      setValueIfExists('freeShippingThreshold', '50000');
+      setValueIfExists('shippingCost', '10000');
+      setValueIfExists('taxRate', '18');
+      setValueIfExists('sessionTimeout', '30');
+      setValueIfExists('apiKey', generateApiKey());
+      
+      // Update UI
+      const freeShippingContainer = document.getElementById('freeShippingThresholdContainer');
+      if (freeShippingContainer) {
+        freeShippingContainer.style.display = 'none';
+      }
+      
+      updateLogoPreview();
+      
+      showAlert('success', 'Settings reset to default values');
+    }
+
+    // Show reset confirmation modal
+    function showResetModal() {
+      const confirmResetInput = document.getElementById('confirmReset');
+      const resetConfirmBtn = document.getElementById('resetConfirmBtn');
+      
+      if (confirmResetInput && resetConfirmBtn) {
+        confirmResetInput.value = '';
+        resetConfirmBtn.disabled = true;
+        openModal('resetModal');
+      }
+    }
+
+    // Confirm reset
+    async function confirmReset() {
+      try {
+        if (currentSettingsId) {
+          // Delete existing settings from database
+          const { error } = await sb
+            .from('system_settings')
+            .delete()
+            .eq('id', currentSettingsId);
+          
+          if (error) throw error;
+          
+          currentSettingsId = null;
+        }
+        
+        closeModal('resetModal');
+        resetToDefaults();
+        showAlert('success', 'Settings have been reset to defaults');
+        
+      } catch (error) {
+        console.error('Error resetting settings:', error);
+        showAlert('error', 'Error resetting settings: ' + error.message);
+      }
+    }
+
+    // Open modal
+    function openModal(modalId) {
+      const modal = document.getElementById(modalId);
+      if (modal) {
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+      }
+    }
+
+    // Close modal
+    function closeModal(modalId) {
+      const modal = document.getElementById(modalId);
+      if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+      }
+    }
+
+    // Logout
+    async function logout() {
+      if (confirm('Are you sure you want to logout?')) {
+        await sb.auth.signOut();
+        localStorage.removeItem('lastAdminLogin');
+        window.location.href = 'admin-login.html?logout=true';
+      }
+    }
+  </script>
+</body>
+</html>

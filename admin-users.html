@@ -1,0 +1,2334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Admin Users | iBlue Commerce</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    /* ===== MOBILE-FIRST RESET & BASE STYLES ===== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    :root {
+      --primary: #003cff;
+      --primary-dark: #0028cc;
+      --secondary: #6c757d;
+      --success: #28a745;
+      --warning: #ffc107;
+      --danger: #dc3545;
+      --info: #17a2b8;
+      --light: #f8f9fa;
+      --dark: #343a40;
+      --sidebar-width: 250px;
+      --safe-area-top: env(safe-area-inset-top, 0px);
+      --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    html {
+      font-size: 14px;
+    }
+
+    body {
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Tahoma, Geneva, Verdana, sans-serif;
+      background: #f5f7fa;
+      color: #333;
+      min-height: 100vh;
+      min-height: -webkit-fill-available;
+      display: flex;
+      overflow-x: hidden;
+      line-height: 1.4;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* ===== TOUCH-FRIENDLY BUTTONS & INPUTS ===== */
+    button,
+    select,
+    input,
+    .btn,
+    .btn-icon,
+    .nav-item a {
+      min-height: 44px;
+      min-width: 44px;
+      touch-action: manipulation;
+    }
+
+    select,
+    input,
+    textarea {
+      font-size: 16px !important; /* Prevents iOS zoom */
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+    }
+
+    /* ===== SIDEBAR - MOBILE OVERLAY ===== */
+    .sidebar {
+      width: 100%;
+      max-width: 280px;
+      background: white;
+      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+      position: fixed;
+      height: 100vh;
+      height: -webkit-fill-available;
+      overflow-y: auto;
+      z-index: 1000;
+      transform: translateX(-100%);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      left: 0;
+      top: 0;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+    }
+
+    .sidebar.active {
+      transform: translateX(0);
+    }
+
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      backdrop-filter: blur(2px);
+    }
+
+    .sidebar-overlay.active {
+      display: block;
+    }
+
+    .sidebar-header {
+      padding: 25px 20px;
+      border-bottom: 1px solid #eaeaea;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: white;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 5px;
+    }
+
+    .logo i {
+      font-size: 1.8rem;
+    }
+
+    .logo span {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .admin-role {
+      font-size: 0.85rem;
+      opacity: 0.9;
+      margin-left: 42px;
+    }
+
+    .user-info {
+      padding: 20px;
+      border-bottom: 1px solid #eaeaea;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .user-avatar {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 600;
+      font-size: 1.2rem;
+      flex-shrink: 0;
+    }
+
+    .user-details h4 {
+      margin-bottom: 5px;
+      font-size: 1rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .user-details p {
+      color: var(--secondary);
+      font-size: 0.85rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .nav-menu {
+      list-style: none;
+      padding: 20px 0;
+    }
+
+    .nav-item {
+      margin-bottom: 5px;
+    }
+
+    .nav-item a {
+      display: flex;
+      align-items: center;
+      padding: 12px 20px;
+      color: #555;
+      text-decoration: none;
+      transition: all 0.3s;
+      border-left: 3px solid transparent;
+      white-space: nowrap;
+    }
+
+    .nav-item a:hover, .nav-item a.active {
+      background: rgba(0, 60, 255, 0.05);
+      color: var(--primary);
+      border-left-color: var(--primary);
+    }
+
+    .nav-item i {
+      width: 24px;
+      margin-right: 12px;
+      font-size: 1.1rem;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .nav-divider {
+      padding: 15px 20px;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      color: var(--secondary);
+      font-weight: 600;
+      letter-spacing: 1px;
+      white-space: nowrap;
+    }
+
+    .sidebar-footer {
+      padding: 20px;
+      border-top: 1px solid #eaeaea;
+      margin-top: auto;
+      position: sticky;
+      bottom: 0;
+      background: white;
+    }
+
+    /* ===== MOBILE MENU TOGGLE ===== */
+    .mobile-menu-toggle {
+      display: flex;
+      position: fixed;
+      top: 20px;
+      left: 15px;
+      z-index: 1001;
+      background: var(--primary);
+      color: white;
+      width: 50px;
+      height: 50px;
+      border-radius: 10px;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 4px 12px rgba(0, 60, 255, 0.3);
+    }
+
+    /* ===== MAIN CONTENT - MOBILE OPTIMIZED ===== */
+    .main-content {
+      flex: 1;
+      padding: 20px 15px 30px;
+      min-height: 100vh;
+      width: 100%;
+      padding-top: 70px; /* Space for mobile toggle */
+    }
+
+    .top-bar {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      margin-bottom: 25px;
+      padding: 20px 15px;
+      border-bottom: 1px solid #eaeaea;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      position: relative;
+      margin-top: 10px;
+    }
+
+    .page-title h1 {
+      font-size: 1.5rem;
+      color: var(--dark);
+      margin-bottom: 5px;
+      line-height: 1.2;
+    }
+
+    .page-title p {
+      color: var(--secondary);
+      font-size: 0.9rem;
+      line-height: 1.3;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      justify-content: flex-start;
+    }
+
+    .btn {
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.3s;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover, .btn-primary:active {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0, 60, 255, 0.2);
+    }
+
+    .btn-success {
+      background: var(--success);
+      color: white;
+    }
+
+    .btn-warning {
+      background: var(--warning);
+      color: var(--dark);
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: white;
+    }
+
+    .btn-light {
+      background: var(--light);
+      color: var(--dark);
+      border: 1px solid #ddd;
+    }
+
+    /* ===== SEARCH AND FILTERS ===== */
+    .search-filter {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    @media (min-width: 576px) {
+      .search-filter {
+        flex-direction: row;
+        align-items: center;
+      }
+    }
+
+    .search-box {
+      flex: 1;
+      width: 100%;
+      position: relative;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 12px 15px 12px 45px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      background: white;
+    }
+
+    .search-box i {
+      position: absolute;
+      left: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--secondary);
+      pointer-events: none;
+    }
+
+    .filter-select {
+      padding: 12px 15px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      background: white;
+      font-size: 0.95rem;
+      width: 100%;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%236c757d' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 15px center;
+      background-size: 12px;
+      padding-right: 40px;
+    }
+
+    @media (min-width: 576px) {
+      .filter-select {
+        width: auto;
+        min-width: 150px;
+      }
+    }
+
+    /* ===== TABLE CONTAINER ===== */
+    .table-container {
+      background: white;
+      border-radius: 12px;
+      padding: 20px 15px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin: 0 -15px;
+      width: calc(100% + 30px);
+    }
+
+    @media (min-width: 768px) {
+      .table-container {
+        margin: 0;
+        width: 100%;
+      }
+    }
+
+    .table-header {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    @media (min-width: 576px) {
+      .table-header {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+      }
+    }
+
+    .table-header h3 {
+      font-size: 1.2rem;
+      color: var(--dark);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 800px;
+    }
+
+    th, td {
+      padding: 12px 10px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+      font-size: 0.9rem;
+    }
+
+    th {
+      background: rgba(0, 60, 255, 0.05);
+      color: var(--dark);
+      font-weight: 600;
+      font-size: 0.85rem;
+      white-space: nowrap;
+    }
+
+    tr:hover {
+      background: rgba(0, 60, 255, 0.02);
+    }
+
+    .user-avatar-small {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 600;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+    }
+
+    /* ===== STATUS BADGES ===== */
+    .status-badge {
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .status-active { background: rgba(40, 167, 69, 0.1); color: var(--success); }
+    .status-inactive { background: rgba(220, 53, 69, 0.1); color: var(--danger); }
+    .status-verified { background: rgba(0, 60, 255, 0.1); color: var(--primary); }
+    .status-pending { background: rgba(255, 193, 7, 0.1); color: #b38b00; }
+
+    /* ===== ROLE BADGES ===== */
+    .role-badge {
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .role-admin { background: rgba(220, 53, 69, 0.1); color: var(--danger); }
+    .role-seller { background: rgba(0, 60, 255, 0.1); color: var(--primary); }
+    .role-buyer { background: rgba(40, 167, 69, 0.1); color: var(--success); }
+
+    /* ===== ACTION BUTTONS ===== */
+    .action-buttons {
+      display: flex;
+      gap: 6px;
+    }
+
+    .btn-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border: none;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+
+    .btn-icon:active {
+      transform: scale(0.95);
+    }
+
+    .btn-icon.edit { background: rgba(0, 60, 255, 0.1); color: var(--primary); }
+    .btn-icon.delete { background: rgba(220, 53, 69, 0.1); color: var(--danger); }
+    .btn-icon.view { background: rgba(40, 167, 69, 0.1); color: var(--success); }
+    .btn-icon.verify { background: rgba(23, 162, 184, 0.1); color: var(--info); }
+
+    .role-select {
+      padding: 6px 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      background: white;
+      min-width: 100px;
+    }
+
+    /* ===== MODAL ===== */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 2000;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      animation: slideUp 0.3s ease;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .modal-header {
+      padding: 20px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      background: white;
+      z-index: 1;
+      border-radius: 16px 16px 0 0;
+    }
+
+    .modal-header h3 {
+      font-size: 1.2rem;
+      color: var(--dark);
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 1.8rem;
+      cursor: pointer;
+      color: var(--secondary);
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-body {
+      padding: 20px;
+    }
+
+    .modal-footer {
+      padding: 20px;
+      border-top: 1px solid #eee;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      position: sticky;
+      bottom: 0;
+      background: white;
+      border-radius: 0 0 16px 16px;
+    }
+
+    /* ===== LOADING SPINNER ===== */
+    .loading-spinner {
+      display: none;
+      justify-content: center;
+      align-items: center;
+      padding: 40px;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid rgba(0, 60, 255, 0.1);
+      border-radius: 50%;
+      border-top-color: var(--primary);
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* ===== EMPTY STATE ===== */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--secondary);
+    }
+
+    .empty-state i {
+      font-size: 3rem;
+      margin-bottom: 20px;
+      color: #ddd;
+    }
+
+    /* ===== PAGINATION ===== */
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+
+    .page-link {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background: white;
+      cursor: pointer;
+      font-size: 0.9rem;
+      min-width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .page-link.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .page-link:hover:not(.active) {
+      background: #f8f9fa;
+    }
+
+    /* ===== RESPONSIVE BREAKPOINTS ===== */
+    @media (min-width: 480px) {
+      html {
+        font-size: 15px;
+      }
+      
+      .main-content {
+        padding: 20px 20px 30px;
+      }
+      
+      .table-container {
+        padding: 20px;
+      }
+    }
+
+    @media (min-width: 576px) {
+      .top-bar {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+      }
+      
+      .top-actions {
+        width: auto;
+        justify-content: flex-end;
+      }
+      
+      .search-filter {
+        flex-direction: row;
+      }
+    }
+
+    @media (min-width: 768px) {
+      html {
+        font-size: 16px;
+      }
+      
+      .sidebar {
+        transform: translateX(0);
+        position: sticky;
+        top: 0;
+        max-width: var(--sidebar-width);
+      }
+      
+      .sidebar-overlay {
+        display: none !important;
+      }
+      
+      .mobile-menu-toggle {
+        display: none;
+      }
+      
+      .main-content {
+        margin-left: var(--sidebar-width);
+        padding: 30px;
+        padding-top: 30px;
+      }
+    }
+
+    /* ===== BOTTOM NAVIGATION FOR MOBILE ===== */
+    .bottom-nav {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      border-top: 1px solid #eaeaea;
+      padding: 10px 0;
+      z-index: 1000;
+      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    @media (max-width: 767px) {
+      .bottom-nav {
+        display: flex;
+        justify-content: space-around;
+        padding-bottom: max(10px, var(--safe-area-bottom));
+      }
+      
+      .bottom-nav-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        text-decoration: none;
+        color: var(--secondary);
+        font-size: 0.75rem;
+        padding: 8px 12px;
+        border-radius: 8px;
+        transition: all 0.3s;
+      }
+      
+      .bottom-nav-item.active {
+        color: var(--primary);
+        background: rgba(0, 60, 255, 0.05);
+      }
+      
+      .bottom-nav-item i {
+        font-size: 1.2rem;
+      }
+    }
+
+    /* ===== MOBILE USERS VIEW ===== */
+    .mobile-users-view {
+      display: none;
+    }
+
+    @media (max-width: 767px) {
+      .mobile-users-view {
+        display: block;
+      }
+      
+      .desktop-table-view {
+        display: none;
+      }
+      
+      .mobile-user-card {
+        background: white;
+        border-radius: 12px;
+        padding: 15px;
+        margin-bottom: 15px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      }
+      
+      .mobile-user-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 10px;
+      }
+      
+      .mobile-user-info {
+        flex: 1;
+        min-width: 0;
+      }
+      
+      .mobile-user-info h4 {
+        font-size: 0.95rem;
+        margin-bottom: 3px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      
+      .mobile-user-meta {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+        margin-top: 10px;
+      }
+      
+      .mobile-user-meta div {
+        font-size: 0.85rem;
+      }
+      
+      .mobile-user-meta strong {
+        color: var(--secondary);
+        display: block;
+        margin-bottom: 2px;
+        font-size: 0.8rem;
+      }
+      
+      .mobile-user-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 15px;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+      }
+    }
+
+    /* ===== ALERTS ===== */
+    .alert {
+      padding: 15px 20px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      animation: slideDown 0.3s ease;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .alert-success {
+      background: rgba(40, 167, 69, 0.1);
+      color: var(--success);
+      border-left: 4px solid var(--success);
+    }
+
+    .alert-error {
+      background: rgba(220, 53, 69, 0.1);
+      color: var(--danger);
+      border-left: 4px solid var(--danger);
+    }
+
+    .alert-info {
+      background: rgba(0, 60, 255, 0.1);
+      color: var(--primary);
+      border-left: 4px solid var(--primary);
+    }
+
+    /* ===== STATS CARDS ===== */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+
+    .stat-card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px 15px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      transition: transform 0.3s;
+      min-height: 120px;
+    }
+
+    .stat-card:active {
+      transform: scale(0.98);
+    }
+
+    .stat-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .stat-icon.total { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); }
+    .stat-icon.active { background: linear-gradient(135deg, var(--success) 0%, #1e7e34 100%); }
+    .stat-icon.admins { background: linear-gradient(135deg, var(--danger) 0%, #c82333 100%); }
+    .stat-icon.new { background: linear-gradient(135deg, var(--warning) 0%, #e0a800 100%); }
+
+    .stat-content h3 {
+      font-size: 1.5rem;
+      margin-bottom: 5px;
+      color: var(--dark);
+      line-height: 1;
+    }
+
+    .stat-content p {
+      color: var(--secondary);
+      font-size: 0.85rem;
+      margin-bottom: 3px;
+    }
+
+    /* ===== FORM CONTROLS ===== */
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: var(--dark);
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 12px 15px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      font-size: 16px;
+      background: white;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    /* ===== TOGGLE SWITCH ===== */
+    .toggle-switch {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--light);
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 15px;
+    }
+
+    .toggle-label {
+      flex: 1;
+    }
+
+    .toggle-label span:first-child {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 3px;
+      color: var(--dark);
+    }
+
+    .toggle-label span:last-child {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--secondary);
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 26px;
+      margin-left: 15px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 34px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: var(--primary);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(24px);
+    }
+  </style>
+</head>
+<body>
+  <!-- Mobile Menu Toggle -->
+  <button class="mobile-menu-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">
+    <i class="fas fa-bars"></i>
+  </button>
+
+  <!-- Sidebar Overlay -->
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+  <!-- Sidebar -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <i class="fas fa-shopping-bag" aria-hidden="true"></i>
+        <span>iBlue</span>
+      </div>
+      <div class="admin-role">Administrator Panel</div>
+    </div>
+
+    <div class="user-info">
+      <div class="user-avatar" id="userAvatar" aria-label="User avatar">U</div>
+      <div class="user-details">
+        <h4 id="userName">Loading...</h4>
+        <p id="userEmail">Loading...</p>
+      </div>
+    </div>
+
+    <ul class="nav-menu">
+      <li class="nav-item"><a href="index.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+      <li class="nav-item"><a href="admin-products.html"><i class="fas fa-box"></i> Products</a></li>
+      <li class="nav-item"><a href="admin-orders.html"><i class="fas fa-shopping-cart"></i> Orders</a></li>
+      <li class="nav-item"><a href="admin-customers.html"><i class="fas fa-users"></i> Customers</a></li>
+      <li class="nav-item"><a href="analytics.html"><i class="fas fa-chart-bar"></i> Analytics</a></li>
+      
+      <li class="nav-divider">Management</li>
+      
+      <li class="nav-item"><a href="admin-add-product.html"><i class="fas fa-plus-circle"></i> Add Product</a></li>
+      <li class="nav-item"><a href="categories.html"><i class="fas fa-tags"></i> Categories</a></li>
+      <li class="nav-item"><a href="inventory.html"><i class="fas fa-warehouse"></i> Inventory</a></li>
+      <li class="nav-item"><a href="sales-reports.html"><i class="fas fa-file-invoice-dollar"></i> Sales Reports</a></li>
+      
+      <li class="nav-divider">Settings</li>
+      
+      <li class="nav-item"><a href="System-settings.html"><i class="fas fa-cog"></i> System Settings</a></li>
+      <li class="nav-item"><a href="admin-users.html" class="active"><i class="fas fa-user-cog"></i> Admin Users</a></li>
+      <li class="nav-item"><a href="roles-permissions.html"><i class="fas fa-user-shield"></i> Roles & Permissions</a></li>
+      <li class="nav-item"><a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+    </ul>
+
+    <div class="sidebar-footer">
+      <div style="font-size: 0.8rem; color: var(--secondary); text-align: center;">
+        <p><i class="fas fa-shield-alt"></i> Secure Admin Portal</p>
+        <p>v2.1.4 • Last login: <span id="lastLoginTime">Loading...</span></p>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Bottom Navigation for Mobile -->
+  <div class="bottom-nav">
+    <a href="index.html" class="bottom-nav-item">
+      <i class="fas fa-tachometer-alt"></i>
+      <span>Dashboard</span>
+    </a>
+    <a href="admin-products.html" class="bottom-nav-item">
+      <i class="fas fa-box"></i>
+      <span>Products</span>
+    </a>
+    <a href="admin-orders.html" class="bottom-nav-item">
+      <i class="fas fa-shopping-cart"></i>
+      <span>Orders</span>
+    </a>
+    <a href="admin-customers.html" class="bottom-nav-item">
+      <i class="fas fa-users"></i>
+      <span>Customers</span>
+    </a>
+  </div>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Top Bar -->
+    <div class="top-bar">
+      <div class="page-title">
+        <h1>Admin Users Management</h1>
+        <p>Manage administrator accounts and permissions</p>
+      </div>
+      
+      <div class="top-actions">
+        <button class="btn btn-primary" onclick="openAddUserModal()">
+          <i class="fas fa-user-plus"></i> Add Admin
+        </button>
+        <button class="btn btn-light" onclick="refreshUsers()">
+          <i class="fas fa-sync-alt"></i> Refresh
+        </button>
+      </div>
+    </div>
+
+    <!-- Alert Container -->
+    <div id="alertContainer"></div>
+
+    <!-- User Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon total">
+          <i class="fas fa-users"></i>
+        </div>
+        <div class="stat-content">
+          <h3 id="totalUsers">0</h3>
+          <p>Total Users</p>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon active">
+          <i class="fas fa-user-check"></i>
+        </div>
+        <div class="stat-content">
+          <h3 id="activeUsers">0</h3>
+          <p>Active Users</p>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon admins">
+          <i class="fas fa-user-shield"></i>
+        </div>
+        <div class="stat-content">
+          <h3 id="adminUsers">0</h3>
+          <p>Admins</p>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon new">
+          <i class="fas fa-user-plus"></i>
+        </div>
+        <div class="stat-content">
+          <h3 id="newUsers">0</h3>
+          <p>New This Month</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table Container -->
+    <div class="table-container">
+      <div class="table-header">
+        <h3>User Accounts</h3>
+        <div class="search-filter">
+          <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="userSearch" placeholder="Search users..." onkeyup="searchUsers()">
+          </div>
+          <select class="filter-select" id="roleFilter" onchange="filterUsers()">
+            <option value="">All Roles</option>
+            <option value="admin">Admin</option>
+            <option value="seller">Seller</option>
+            <option value="buyer">Buyer</option>
+          </select>
+          <select class="filter-select" id="statusFilter" onchange="filterUsers()">
+            <option value="">All Status</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+          <select class="filter-select" id="verificationFilter" onchange="filterUsers()">
+            <option value="">All Verification</option>
+            <option value="verified">Verified</option>
+            <option value="unverified">Unverified</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="loading-spinner" id="usersLoading">
+        <div class="spinner"></div>
+      </div>
+
+      <!-- Mobile Users View -->
+      <div class="mobile-users-view" id="mobileUsersView">
+        <!-- Mobile user cards will be loaded here -->
+      </div>
+
+      <!-- Desktop Table View -->
+      <div class="desktop-table-view">
+        <table id="usersTable">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Verified</th>
+              <th>Status</th>
+              <th>Joined</th>
+              <th>Last Login</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="usersTableBody">
+            <!-- Users will be loaded here -->
+          </tbody>
+        </table>
+      </div>
+
+      <div class="pagination" id="usersPagination">
+        <!-- Pagination will be loaded here -->
+      </div>
+    </div>
+  </main>
+
+  <!-- Add User Modal -->
+  <div class="modal" id="addUserModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Add New Admin User</h3>
+        <button class="modal-close" onclick="closeModal('addUserModal')" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="addUserForm" onsubmit="return false;">
+          <div class="form-group">
+            <label for="newUserName">Full Name</label>
+            <input type="text" id="newUserName" placeholder="John Doe" required>
+          </div>
+          <div class="form-group">
+            <label for="newUserEmail">Email Address</label>
+            <input type="email" id="newUserEmail" placeholder="admin@example.com" required>
+          </div>
+          <div class="form-group">
+            <label for="newUserRole">Role</label>
+            <select id="newUserRole" required>
+              <option value="admin">Administrator</option>
+              <option value="seller">Seller</option>
+              <option value="buyer">Buyer</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="newUserPassword">Password</label>
+            <input type="password" id="newUserPassword" placeholder="••••••••" required minlength="6">
+          </div>
+          <div class="toggle-switch">
+            <div class="toggle-label">
+              <span>Email Verification Required</span>
+              <span>User must verify email before logging in</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="requireVerification">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="toggle-switch">
+            <div class="toggle-label">
+              <span>Account Active</span>
+              <span>User can login immediately</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="accountActive" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-light" onclick="closeModal('addUserModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="addNewUser()">Create User</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit User Modal -->
+  <div class="modal" id="editUserModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Edit User</h3>
+        <button class="modal-close" onclick="closeModal('editUserModal')" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="editUserForm">
+          <input type="hidden" id="editUserId">
+          <div class="form-group">
+            <label for="editUserName">Full Name</label>
+            <input type="text" id="editUserName" required>
+          </div>
+          <div class="form-group">
+            <label for="editUserEmail">Email Address</label>
+            <input type="email" id="editUserEmail" required>
+          </div>
+          <div class="form-group">
+            <label for="editUserRole">Role</label>
+            <select id="editUserRole" required>
+              <option value="admin">Administrator</option>
+              <option value="seller">Seller</option>
+              <option value="buyer">Buyer</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="editUserPhone">Phone Number</label>
+            <input type="tel" id="editUserPhone">
+          </div>
+          <div class="toggle-switch">
+            <div class="toggle-label">
+              <span>Email Verified</span>
+              <span>User has verified their email</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="editUserVerified">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="toggle-switch">
+            <div class="toggle-label">
+              <span>Account Active</span>
+              <span>User can login to the system</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="editUserActive">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="toggle-switch">
+            <div class="toggle-label">
+              <span>Two-Factor Authentication</span>
+              <span>Enable 2FA for this account</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="editUser2FA">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-light" onclick="closeModal('editUserModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveUserChanges()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reset Password Modal -->
+  <div class="modal" id="resetPasswordModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Reset Password</h3>
+        <button class="modal-close" onclick="closeModal('resetPasswordModal')" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="newPassword">New Password</label>
+          <input type="password" id="newPassword" placeholder="••••••••" required minlength="6">
+        </div>
+        <div class="form-group">
+          <label for="confirmPassword">Confirm Password</label>
+          <input type="password" id="confirmPassword" placeholder="••••••••" required minlength="6">
+        </div>
+        <p style="color: var(--secondary); font-size: 0.9rem; margin-top: 10px;">
+          <i class="fas fa-info-circle"></i> The user will need to change this password on their first login.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-light" onclick="closeModal('resetPasswordModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="confirmPasswordReset()">Reset Password</button>
+      </div>
+    </div>
+  </div>
+<script>
+    // Initialize Supabase client
+    const supabaseUrl = "https://amxhpxqakqrjjihwkzcq.supabase.co";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFteGhweHFha3FyamppaHdremNxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5Nzc2NjUsImV4cCI6MjA4MzU1MzY2NX0.yIAZtz3bUc_ZxF8-f4cqW1fKJgFiRsiJdj4qgCDmM0g";
+    
+    const sb = supabase.createClient(supabaseUrl, supabaseKey);
+    
+    // Current user and data
+    let currentUser = null;
+    let currentPage = 1;
+    let allUsers = [];
+    let selectedUserId = null;
+
+    // Initialize users page
+    document.addEventListener('DOMContentLoaded', async function() {
+      await checkAdminAuth();
+      await loadUsers();
+      setupEventListeners();
+    });
+
+    // Check admin authentication
+    async function checkAdminAuth() {
+      const { data: { session } } = await sb.auth.getSession();
+      
+      if (!session) {
+        // Check if we're already on a login page to avoid redirect loops
+        if (!window.location.pathname.includes('admin-login.html')) {
+          window.location.href = 'admin-login.html';
+        }
+        return;
+      }
+      
+      // Check if user is admin/seller in user_profiles table
+      const { data: profile, error } = await sb
+        .from('user_profiles')
+        .select('*')
+        .eq('id', session.user.id)
+        .single();
+      
+      // Also check admins table
+      const { data: adminData } = await sb
+        .from('admins')
+        .select('*')
+        .eq('id', session.user.id)
+        .single();
+      
+      if (error || (!profile || (profile.account_type !== 'admin' && !adminData))) {
+        // Redirect to login if not authorized
+        window.location.href = 'admin-login.html?error=unauthorized';
+        return;
+      }
+      
+      currentUser = {
+        ...session.user,
+        profile: profile,
+        isAdmin: adminData ? true : false
+      };
+      
+      // Update UI with real user info
+      const userName = profile.first_name || profile.username || profile.email?.split('@')[0] || 'User';
+      const userEmail = session.user.email || 'No email';
+      
+      document.getElementById('userName').textContent = userName;
+      document.getElementById('userEmail').textContent = userEmail;
+      document.getElementById('userAvatar').textContent = (userName[0] || 'U').toUpperCase();
+      
+      // Set last login time
+      const lastLogin = profile.last_login || localStorage.getItem('lastAdminLogin');
+      if (lastLogin) {
+        const loginDate = new Date(lastLogin);
+        const now = new Date();
+        const isToday = loginDate.toDateString() === now.toDateString();
+        
+        if (isToday) {
+          document.getElementById('lastLoginTime').textContent = 'Today at ' + loginDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        } else {
+          document.getElementById('lastLoginTime').textContent = loginDate.toLocaleDateString() + ' at ' + loginDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+      }
+      localStorage.setItem('lastAdminLogin', new Date().toISOString());
+      
+      // If we're on login page and authenticated, redirect to main page
+      if (window.location.pathname.includes('admin-login.html') && !window.location.search.includes('error')) {
+        window.location.href = 'index.html';
+      }
+    }
+
+    // Setup event listeners
+    function setupEventListeners() {
+      // Close sidebar when clicking outside on mobile
+      document.addEventListener('click', function(event) {
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        const mobileToggle = document.querySelector('.mobile-menu-toggle');
+        
+        if (window.innerWidth <= 768 && 
+            sidebar && mobileToggle &&
+            !sidebar.contains(event.target) && 
+            !mobileToggle.contains(event.target) &&
+            sidebar.classList.contains('active')) {
+          toggleSidebar();
+        }
+      });
+      
+      // Handle keyboard shortcuts
+      document.addEventListener('keydown', function(e) {
+        // Escape to close modals
+        if (e.key === 'Escape') {
+          const modals = document.querySelectorAll('.modal');
+          modals.forEach(modal => {
+            if (modal.style.display === 'flex') {
+              closeModal(modal.id);
+            }
+          });
+          
+          // Close sidebar on mobile
+          if (window.innerWidth <= 768) {
+            const sidebar = document.getElementById('sidebar');
+            if (sidebar && sidebar.classList.contains('active')) {
+              toggleSidebar();
+            }
+          }
+        }
+        
+        // Ctrl/Cmd + F to focus search
+        if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+          e.preventDefault();
+          const searchInput = document.getElementById('userSearch');
+          if (searchInput) searchInput.focus();
+        }
+      });
+    }
+
+    // Toggle sidebar on mobile
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+      if (sidebar && overlay) {
+        sidebar.classList.toggle('active');
+        overlay.classList.toggle('active');
+      }
+    }
+
+    // Load users
+    async function loadUsers(page = 1) {
+      currentPage = page;
+      const loading = document.getElementById('usersLoading');
+      const tableBody = document.getElementById('usersTableBody');
+      const mobileView = document.getElementById('mobileUsersView');
+      
+      if (loading) loading.style.display = 'flex';
+      if (tableBody) tableBody.innerHTML = '';
+      if (mobileView) mobileView.innerHTML = '';
+      
+      try {
+        const { data: users, error } = await sb
+          .from('user_profiles')
+          .select(`
+            id,
+            username,
+            email,
+            first_name,
+            last_name,
+            phone,
+            account_type,
+            role,
+            is_verified,
+            is_active,
+            created_at,
+            last_login,
+            avatar_url
+          `)
+          .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        
+        allUsers = users || [];
+        updateUserStats(allUsers);
+        
+        // Calculate pagination
+        const pageSize = 10;
+        const totalPages = Math.ceil(allUsers.length / pageSize);
+        const startIndex = (page - 1) * pageSize;
+        const endIndex = startIndex + pageSize;
+        const pageUsers = allUsers.slice(startIndex, endIndex);
+        
+        // Render desktop table view
+        if (tableBody) {
+          pageUsers.forEach(user => {
+            const row = document.createElement('tr');
+            if (!user.is_active) {
+              row.style.opacity = '0.6';
+            }
+            
+            // Determine role for display
+            const displayRole = user.account_type || user.role || 'customer';
+            
+            row.innerHTML = `
+              <td>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  ${user.avatar_url ? 
+                    `<img src="${user.avatar_url}" alt="${user.first_name || 'User'}" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover;">` :
+                    `<div class="user-avatar-small">
+                      ${(user.first_name?.[0] || user.username?.[0] || 'U').toUpperCase()}
+                    </div>`
+                  }
+                  <div>
+                    <strong>${user.first_name || user.username || 'User'}</strong>
+                    ${user.last_name ? `<br><small>${user.last_name}</small>` : ''}
+                  </div>
+                </div>
+              </td>
+              <td>${user.email || 'No email'}</td>
+              <td>
+                <span class="role-badge role-${displayRole}">
+                  ${displayRole}
+                </span>
+              </td>
+              <td>
+                <span class="status-badge ${user.is_verified ? 'status-verified' : 'status-pending'}">
+                  ${user.is_verified ? '✓ Verified' : 'Pending'}
+                </span>
+              </td>
+              <td>
+                <span class="status-badge ${user.is_active ? 'status-active' : 'status-inactive'}">
+                  ${user.is_active ? 'Active' : 'Inactive'}
+                </span>
+              </td>
+              <td>${user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}</td>
+              <td>${user.last_login ? new Date(user.last_login).toLocaleDateString() : 'Never'}</td>
+              <td>
+                <div class="action-buttons">
+                  <button class="btn-icon edit" onclick="editUser('${user.id}')" title="Edit">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  ${displayRole !== 'admin' ? `
+                  <button class="btn-icon verify" onclick="toggleVerification('${user.id}', ${user.is_verified})" title="${user.is_verified ? 'Unverify' : 'Verify'}">
+                    <i class="fas fa-${user.is_verified ? 'user-times' : 'user-check'}"></i>
+                  </button>
+                  ` : ''}
+                  <button class="btn-icon delete" onclick="toggleStatus('${user.id}', ${user.is_active})" title="${user.is_active ? 'Deactivate' : 'Activate'}">
+                    <i class="fas fa-${user.is_active ? 'ban' : 'check'}"></i>
+                  </button>
+                  <button class="btn-icon" onclick="resetUserPassword('${user.id}')" title="Reset Password" style="background: rgba(255, 193, 7, 0.1); color: var(--warning);">
+                    <i class="fas fa-key"></i>
+                  </button>
+                </div>
+              </td>
+            `;
+            tableBody.appendChild(row);
+          });
+        }
+        
+        // Render mobile view
+        if (mobileView && window.innerWidth <= 767) {
+          pageUsers.forEach(user => {
+            const displayRole = user.account_type || user.role || 'customer';
+            
+            const card = document.createElement('div');
+            card.className = 'mobile-user-card';
+            if (!user.is_active) {
+              card.style.opacity = '0.8';
+            }
+            
+            card.innerHTML = `
+              <div class="mobile-user-header">
+                ${user.avatar_url ? 
+                  `<img src="${user.avatar_url}" alt="${user.first_name || 'User'}" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover;">` :
+                  `<div class="user-avatar-small">
+                    ${(user.first_name?.[0] || user.username?.[0] || 'U').toUpperCase()}
+                  </div>`
+                }
+                <div class="mobile-user-info">
+                  <h4>${user.first_name || user.username || 'User'}</h4>
+                  <div style="display: flex; gap: 8px; margin-top: 5px;">
+                    <span class="role-badge role-${displayRole}" style="font-size: 0.7rem;">
+                      ${displayRole}
+                    </span>
+                    <span class="status-badge ${user.is_verified ? 'status-verified' : 'status-pending'}" style="font-size: 0.7rem;">
+                      ${user.is_verified ? '✓' : 'Pending'}
+                    </span>
+                    <span class="status-badge ${user.is_active ? 'status-active' : 'status-inactive'}" style="font-size: 0.7rem;">
+                      ${user.is_active ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div class="mobile-user-meta">
+                <div>
+                  <strong>Email</strong>
+                  <span style="display: block; overflow: hidden; text-overflow: ellipsis;">${user.email || 'N/A'}</span>
+                </div>
+                <div>
+                  <strong>Joined</strong>
+                  <span>${user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}</span>
+                </div>
+                <div>
+                  <strong>Last Login</strong>
+                  <span>${user.last_login ? new Date(user.last_login).toLocaleDateString() : 'Never'}</span>
+                </div>
+                <div>
+                  <strong>Phone</strong>
+                  <span>${user.phone || 'N/A'}</span>
+                </div>
+              </div>
+              <div class="mobile-user-actions">
+                <button class="btn-icon edit" onclick="editUser('${user.id}')" title="Edit">
+                  <i class="fas fa-edit"></i>
+                </button>
+                ${displayRole !== 'admin' ? `
+                <button class="btn-icon verify" onclick="toggleVerification('${user.id}', ${user.is_verified})" title="${user.is_verified ? 'Unverify' : 'Verify'}">
+                  <i class="fas fa-${user.is_verified ? 'user-times' : 'user-check'}"></i>
+                </button>
+                ` : ''}
+                <button class="btn-icon delete" onclick="toggleStatus('${user.id}', ${user.is_active})" title="${user.is_active ? 'Deactivate' : 'Activate'}">
+                  <i class="fas fa-${user.is_active ? 'ban' : 'check'}"></i>
+                </button>
+                <button class="btn-icon" onclick="resetUserPassword('${user.id}')" title="Reset Password" style="background: rgba(255, 193, 7, 0.1); color: var(--warning);">
+                  <i class="fas fa-key"></i>
+                </button>
+              </div>
+            `;
+            mobileView.appendChild(card);
+          });
+        }
+        
+        // Update pagination
+        updateUsersPagination(totalPages);
+        
+      } catch (error) {
+        console.error('Error loading users:', error);
+        if (tableBody) {
+          tableBody.innerHTML = `
+            <tr>
+              <td colspan="8" class="empty-state">
+                <i class="fas fa-exclamation-circle"></i>
+                <p>Error loading users. Please try again.</p>
+              </td>
+            </tr>
+          `;
+        }
+        if (mobileView) {
+          mobileView.innerHTML = `
+            <div class="empty-state">
+              <i class="fas fa-exclamation-circle"></i>
+              <p>Error loading users. Please try again.</p>
+            </div>
+          `;
+        }
+      } finally {
+        if (loading) loading.style.display = 'none';
+      }
+    }
+
+    // Update user statistics
+    function updateUserStats(users) {
+      const totalUsers = users.length;
+      const activeUsers = users.filter(u => u.is_active).length;
+      const adminUsers = users.filter(u => (u.account_type === 'admin' || u.role === 'admin')).length;
+      
+      // Count new users this month
+      const thisMonth = new Date().getMonth();
+      const thisYear = new Date().getFullYear();
+      const newUsers = users.filter(u => {
+        if (!u.created_at) return false;
+        const userDate = new Date(u.created_at);
+        return userDate.getMonth() === thisMonth && userDate.getFullYear() === thisYear;
+      }).length;
+      
+      const totalEl = document.getElementById('totalUsers');
+      const activeEl = document.getElementById('activeUsers');
+      const adminEl = document.getElementById('adminUsers');
+      const newEl = document.getElementById('newUsers');
+      
+      if (totalEl) totalEl.textContent = totalUsers;
+      if (activeEl) activeEl.textContent = activeUsers;
+      if (adminEl) adminEl.textContent = adminUsers;
+      if (newEl) newEl.textContent = newUsers;
+    }
+
+    // Update users pagination
+    function updateUsersPagination(totalPages) {
+      const pagination = document.getElementById('usersPagination');
+      if (!pagination) return;
+      
+      pagination.innerHTML = '';
+      
+      if (totalPages <= 1) return;
+      
+      // Previous button
+      if (currentPage > 1) {
+        const prevBtn = document.createElement('button');
+        prevBtn.className = 'page-link';
+        prevBtn.innerHTML = '<i class="fas fa-chevron-left"></i>';
+        prevBtn.onclick = () => loadUsers(currentPage - 1);
+        pagination.appendChild(prevBtn);
+      }
+      
+      // Page numbers
+      for (let i = 1; i <= totalPages; i++) {
+        if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+          const pageLink = document.createElement('button');
+          pageLink.className = `page-link ${i === currentPage ? 'active' : ''}`;
+          pageLink.textContent = i;
+          pageLink.onclick = () => loadUsers(i);
+          pagination.appendChild(pageLink);
+        } else if (i === currentPage - 2 || i === currentPage + 2) {
+          const ellipsis = document.createElement('span');
+          ellipsis.textContent = '...';
+          ellipsis.style.padding = '8px';
+          pagination.appendChild(ellipsis);
+        }
+      }
+      
+      // Next button
+      if (currentPage < totalPages) {
+        const nextBtn = document.createElement('button');
+        nextBtn.className = 'page-link';
+        nextBtn.innerHTML = '<i class="fas fa-chevron-right"></i>';
+        nextBtn.onclick = () => loadUsers(currentPage + 1);
+        pagination.appendChild(nextBtn);
+      }
+    }
+
+    // Search users
+    function searchUsers() {
+      const searchInput = document.getElementById('userSearch');
+      if (!searchInput) return;
+      
+      const searchTerm = searchInput.value.toLowerCase();
+      const rows = document.querySelectorAll('#usersTableBody tr');
+      const mobileCards = document.querySelectorAll('.mobile-user-card');
+      
+      rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm) ? '' : 'none';
+      });
+      
+      mobileCards.forEach(card => {
+        const text = card.textContent.toLowerCase();
+        card.style.display = text.includes(searchTerm) ? '' : 'none';
+      });
+    }
+
+    // Filter users
+    function filterUsers() {
+      const roleSelect = document.getElementById('roleFilter');
+      const statusSelect = document.getElementById('statusFilter');
+      const verificationSelect = document.getElementById('verificationFilter');
+      
+      if (!roleSelect || !statusSelect || !verificationSelect) return;
+      
+      const role = roleSelect.value;
+      const status = statusSelect.value;
+      const verification = verificationSelect.value;
+      
+      const rows = document.querySelectorAll('#usersTableBody tr');
+      const mobileCards = document.querySelectorAll('.mobile-user-card');
+      
+      rows.forEach((row, index) => {
+        if (index >= allUsers.length) return;
+        
+        const user = allUsers[index];
+        const displayRole = user.account_type || user.role || 'customer';
+        let show = true;
+        
+        if (role && displayRole !== role) show = false;
+        if (status === 'active' && !user.is_active) show = false;
+        if (status === 'inactive' && user.is_active) show = false;
+        if (verification === 'verified' && !user.is_verified) show = false;
+        if (verification === 'unverified' && user.is_verified) show = false;
+        
+        row.style.display = show ? '' : 'none';
+      });
+      
+      mobileCards.forEach((card, index) => {
+        if (index >= allUsers.length) return;
+        
+        const user = allUsers[index];
+        const displayRole = user.account_type || user.role || 'customer';
+        let show = true;
+        
+        if (role && displayRole !== role) show = false;
+        if (status === 'active' && !user.is_active) show = false;
+        if (status === 'inactive' && user.is_active) show = false;
+        if (verification === 'verified' && !user.is_verified) show = false;
+        if (verification === 'unverified' && user.is_verified) show = false;
+        
+        card.style.display = show ? '' : 'none';
+      });
+    }
+
+    // Open add user modal
+    function openAddUserModal() {
+      const form = document.getElementById('addUserForm');
+      if (form) form.reset();
+      openModal('addUserModal');
+    }
+
+    // Add new user
+    async function addNewUser() {
+      const nameInput = document.getElementById('newUserName');
+      const emailInput = document.getElementById('newUserEmail');
+      const roleInput = document.getElementById('newUserRole');
+      const passwordInput = document.getElementById('newUserPassword');
+      
+      if (!nameInput || !emailInput || !roleInput || !passwordInput) return;
+      
+      const name = nameInput.value.trim();
+      const email = emailInput.value.trim();
+      const role = roleInput.value;
+      const password = passwordInput.value;
+      const requireVerification = document.getElementById('requireVerification')?.checked || false;
+      const accountActive = document.getElementById('accountActive')?.checked || true;
+      
+      if (!name || !email || !password) {
+        showAlert('error', 'Please fill in all required fields');
+        return;
+      }
+      
+      if (password.length < 6) {
+        showAlert('error', 'Password must be at least 6 characters');
+        return;
+      }
+      
+      try {
+        // First, create auth user
+        const { data: authData, error: authError } = await sb.auth.signUp({
+          email: email,
+          password: password,
+          options: {
+            data: {
+              name: name
+            }
+          }
+        });
+        
+        if (authError) throw authError;
+        
+        // Then create user profile
+        const username = name.toLowerCase().replace(/\s+/g, '_') + '_' + Date.now().toString().slice(-6);
+        
+        const userData = {
+          id: authData.user.id,
+          username: username,
+          email: email,
+          first_name: name.split(' ')[0],
+          last_name: name.split(' ').slice(1).join(' ') || null,
+          account_type: role,
+          role: role,
+          is_verified: !requireVerification,
+          is_active: accountActive
+        };
+        
+        const { error: profileError } = await sb
+          .from('user_profiles')
+          .insert(userData);
+        
+        if (profileError) {
+          // If profile creation fails, try to delete the auth user
+          await sb.auth.signOut();
+          throw profileError;
+        }
+        
+        // If role is admin, also add to admins table
+        if (role === 'admin') {
+          await sb
+            .from('admins')
+            .insert({
+              id: authData.user.id,
+              email: email
+            });
+        }
+        
+        closeModal('addUserModal');
+        showAlert('success', 'User created successfully!');
+        loadUsers(currentPage);
+        
+      } catch (error) {
+        console.error('Error creating user:', error);
+        showAlert('error', 'Error creating user: ' + (error.message || 'Unknown error'));
+      }
+    }
+
+    // Edit user
+    async function editUser(userId) {
+      try {
+        const { data: user, error } = await sb
+          .from('user_profiles')
+          .select('*')
+          .eq('id', userId)
+          .single();
+        
+        if (error) throw error;
+        
+        selectedUserId = userId;
+        
+        // Set form values
+        const editUserId = document.getElementById('editUserId');
+        const editUserName = document.getElementById('editUserName');
+        const editUserEmail = document.getElementById('editUserEmail');
+        const editUserRole = document.getElementById('editUserRole');
+        const editUserPhone = document.getElementById('editUserPhone');
+        const editUserVerified = document.getElementById('editUserVerified');
+        const editUserActive = document.getElementById('editUserActive');
+        
+        if (editUserId) editUserId.value = userId;
+        if (editUserName) editUserName.value = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username;
+        if (editUserEmail) editUserEmail.value = user.email || '';
+        if (editUserRole) editUserRole.value = user.account_type || user.role || 'customer';
+        if (editUserPhone) editUserPhone.value = user.phone || '';
+        if (editUserVerified) editUserVerified.checked = user.is_verified;
+        if (editUserActive) editUserActive.checked = user.is_active;
+        
+        // Remove 2FA checkbox since it doesn't exist in schema
+        const editUser2FA = document.getElementById('editUser2FA');
+        if (editUser2FA && editUser2FA.parentElement) {
+          editUser2FA.parentElement.style.display = 'none';
+        }
+        
+        openModal('editUserModal');
+        
+      } catch (error) {
+        console.error('Error fetching user:', error);
+        showAlert('error', 'Error loading user details');
+      }
+    }
+
+    // Save user changes
+    async function saveUserChanges() {
+      const userId = document.getElementById('editUserId')?.value;
+      if (!userId) return;
+      
+      const name = document.getElementById('editUserName')?.value?.trim() || '';
+      const email = document.getElementById('editUserEmail')?.value?.trim() || '';
+      const role = document.getElementById('editUserRole')?.value || 'customer';
+      const phone = document.getElementById('editUserPhone')?.value?.trim() || '';
+      const isVerified = document.getElementById('editUserVerified')?.checked || false;
+      const isActive = document.getElementById('editUserActive')?.checked || false;
+      
+      if (!name || !email || !role) {
+        showAlert('error', 'Please fill in all required fields');
+        return;
+      }
+      
+      const nameParts = name.split(' ');
+      const updates = {
+        first_name: nameParts[0],
+        last_name: nameParts.slice(1).join(' ') || null,
+        email: email,
+        account_type: role,
+        role: role,
+        phone: phone || null,
+        is_verified: isVerified,
+        is_active: isActive,
+        updated_at: new Date().toISOString()
+      };
+      
+      try {
+        const { error } = await sb
+          .from('user_profiles')
+          .update(updates)
+          .eq('id', userId);
+        
+        if (error) throw error;
+        
+        // Update admins table if role is admin
+        if (role === 'admin') {
+          const { data: existingAdmin } = await sb
+            .from('admins')
+            .select('*')
+            .eq('id', userId)
+            .single();
+          
+          if (!existingAdmin) {
+            await sb
+              .from('admins')
+              .insert({
+                id: userId,
+                email: email
+              });
+          }
+        } else {
+          // Remove from admins table if no longer admin
+          await sb
+            .from('admins')
+            .delete()
+            .eq('id', userId);
+        }
+        
+        closeModal('editUserModal');
+        showAlert('success', 'User updated successfully!');
+        loadUsers(currentPage);
+        
+      } catch (error) {
+        console.error('Error updating user:', error);
+        showAlert('error', 'Error updating user: ' + error.message);
+      }
+    }
+
+    // Toggle user verification
+    async function toggleVerification(userId, currentValue) {
+      if (!confirm(`Are you sure you want to ${currentValue ? 'unverify' : 'verify'} this user?`)) {
+        return;
+      }
+      
+      try {
+        const { error } = await sb
+          .from('user_profiles')
+          .update({ 
+            is_verified: !currentValue,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', userId);
+        
+        if (error) throw error;
+        
+        showAlert('success', `User ${!currentValue ? 'verified' : 'unverified'} successfully!`);
+        loadUsers(currentPage);
+        
+      } catch (error) {
+        console.error('Error toggling verification:', error);
+        showAlert('error', 'Error updating verification status');
+      }
+    }
+
+    // Toggle user status
+    async function toggleStatus(userId, currentValue) {
+      const action = currentValue ? 'deactivate' : 'activate';
+      
+      if (!confirm(`Are you sure you want to ${action} this user?`)) {
+        return;
+      }
+      
+      try {
+        const { error } = await sb
+          .from('user_profiles')
+          .update({ 
+            is_active: !currentValue,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', userId);
+        
+        if (error) throw error;
+        
+        showAlert('success', `User ${action}d successfully!`);
+        loadUsers(currentPage);
+        
+      } catch (error) {
+        console.error('Error toggling status:', error);
+        showAlert('error', 'Error updating user status');
+      }
+    }
+
+    // Reset user password
+    function resetUserPassword(userId) {
+      selectedUserId = userId;
+      const newPasswordInput = document.getElementById('newPassword');
+      const confirmPasswordInput = document.getElementById('confirmPassword');
+      
+      if (newPasswordInput) newPasswordInput.value = '';
+      if (confirmPasswordInput) confirmPasswordInput.value = '';
+      
+      openModal('resetPasswordModal');
+    }
+
+    // Confirm password reset
+    async function confirmPasswordReset() {
+      const newPasswordInput = document.getElementById('newPassword');
+      const confirmPasswordInput = document.getElementById('confirmPassword');
+      
+      if (!newPasswordInput || !confirmPasswordInput) return;
+      
+      const newPassword = newPasswordInput.value;
+      const confirmPassword = confirmPasswordInput.value;
+      
+      if (!newPassword || !confirmPassword) {
+        showAlert('error', 'Please fill in both password fields');
+        return;
+      }
+      
+      if (newPassword.length < 6) {
+        showAlert('error', 'Password must be at least 6 characters');
+        return;
+      }
+      
+      if (newPassword !== confirmPassword) {
+        showAlert('error', 'Passwords do not match');
+        return;
+      }
+      
+      try {
+        // Note: Password reset should be done via Supabase Admin API or email reset
+        // For security, we should send a reset email instead of setting password directly
+        const { error } = await sb.auth.resetPasswordForEmail(selectedUserId, {
+          redirectTo: `${window.location.origin}/reset-password.html`
+        });
+        
+        if (error) throw error;
+        
+        closeModal('resetPasswordModal');
+        showAlert('success', 'Password reset email sent successfully!');
+        
+      } catch (error) {
+        console.error('Error resetting password:', error);
+        showAlert('error', 'Error sending reset email: ' + error.message);
+      }
+    }
+
+    // Show alert message
+    function showAlert(type, message) {
+      const alertContainer = document.getElementById('alertContainer');
+      if (!alertContainer) return;
+      
+      const alert = document.createElement('div');
+      alert.className = `alert alert-${type}`;
+      
+      let icon = 'info-circle';
+      if (type === 'success') icon = 'check-circle';
+      if (type === 'error') icon = 'exclamation-circle';
+      
+      alert.innerHTML = `
+        <i class="fas fa-${icon}"></i>
+        <span>${message}</span>
+      `;
+      
+      alertContainer.appendChild(alert);
+      
+      // Auto-remove after 5 seconds
+      setTimeout(() => {
+        alert.style.opacity = '0';
+        alert.style.transform = 'translateY(-10px)';
+        setTimeout(() => {
+          if (alert.parentNode) {
+            alert.parentNode.removeChild(alert);
+          }
+        }, 300);
+      }, 5000);
+    }
+
+    // Open modal
+    function openModal(modalId) {
+      const modal = document.getElementById(modalId);
+      if (modal) {
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+      }
+    }
+
+    // Close modal
+    function closeModal(modalId) {
+      const modal = document.getElementById(modalId);
+      if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+      }
+    }
+
+    // Refresh users
+    function refreshUsers() {
+      loadUsers(currentPage);
+      showAlert('info', 'Users list refreshed');
+      
+      // Show refresh animation
+      const refreshBtn = event?.target?.closest('.btn');
+      if (refreshBtn) {
+        const originalHTML = refreshBtn.innerHTML;
+        refreshBtn.innerHTML = '<i class="fas fa-check"></i> Refreshed!';
+        refreshBtn.disabled = true;
+        
+        setTimeout(() => {
+          refreshBtn.innerHTML = originalHTML;
+          refreshBtn.disabled = false;
+        }, 1500);
+      }
+    }
+
+    // Logout
+    async function logout() {
+      if (confirm('Are you sure you want to logout?')) {
+        try {
+          await sb.auth.signOut();
+          localStorage.removeItem('lastAdminLogin');
+          // Redirect to login page with logout parameter
+          window.location.href = 'admin-login.html?logout=true';
+        } catch (error) {
+          console.error('Logout error:', error);
+          window.location.href = 'admin-login.html';
+        }
+      }
+    }
+
+    // Handle window resize
+    window.addEventListener('resize', function() {
+      // Reload users view when switching between mobile/desktop
+      loadUsers(currentPage);
+    });
+  </script>
+  
+</body>
+</html>

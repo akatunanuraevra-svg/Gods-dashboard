@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login | iBlue Commerce</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #003cff 0%, #0028cc 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .login-container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            width: 100%;
+            max-width: 450px;
+            overflow: hidden;
+        }
+        
+        .login-header {
+            background: linear-gradient(135deg, #003cff 0%, #0028cc 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        
+        .login-header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+        
+        .login-header p {
+            opacity: 0.9;
+            font-size: 0.95rem;
+            margin-top: 5px;
+        }
+        
+        .login-body {
+            padding: 40px 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 24px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 0.95rem;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #003cff;
+            box-shadow: 0 0 0 3px rgba(0, 60, 255, 0.1);
+        }
+        
+        .login-btn {
+            width: 100%;
+            padding: 16px;
+            background: #003cff;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .login-btn:hover {
+            background: #0028cc;
+            transform: translateY(-2px);
+        }
+        
+        .login-btn:active {
+            transform: translateY(0);
+        }
+        
+        .login-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+        
+        #alertContainer {
+            margin-bottom: 20px;
+        }
+        
+        .alert {
+            padding: 14px 16px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.95rem;
+            animation: slideDown 0.3s ease;
+        }
+        
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .alert-error {
+            background: rgba(220, 53, 69, 0.1);
+            color: #dc3545;
+            border-left: 4px solid #dc3545;
+        }
+        
+        .alert-success {
+            background: rgba(40, 167, 69, 0.1);
+            color: #28a745;
+            border-left: 4px solid #28a745;
+        }
+        
+        .alert-info {
+            background: rgba(23, 162, 184, 0.1);
+            color: #17a2b8;
+            border-left: 4px solid #17a2b8;
+        }
+        
+        .alert-warning {
+            background: rgba(255, 193, 7, 0.1);
+            color: #b38b00;
+            border-left: 4px solid #b38b00;
+        }
+        
+        .alert i {
+            font-size: 1.1rem;
+            width: 20px;
+        }
+        
+        .forgot-link {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.95rem;
+        }
+        
+        .forgot-link a {
+            color: #003cff;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .forgot-link a:hover {
+            text-decoration: underline;
+        }
+        
+        .powered-by {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            font-size: 0.85rem;
+            color: #666;
+            line-height: 1.5;
+        }
+        
+        .admin-help {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            color: #666;
+            border-left: 4px solid #003cff;
+        }
+        
+        .admin-help h4 {
+            color: #003cff;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+        
+        .admin-help ul {
+            padding-left: 20px;
+            margin-top: 5px;
+        }
+        
+        .admin-help li {
+            margin-bottom: 5px;
+        }
+        
+        @media (max-width: 480px) {
+            .login-container {
+                border-radius: 12px;
+            }
+            
+            .login-header, .login-body {
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <h1>
+                <i class="fas fa-shopping-bag"></i>
+                iBlue Commerce
+            </h1>
+            <p>Administrator Login Portal</p>
+        </div>
+        
+        <div class="login-body">
+            <div id="alertContainer"></div>
+            
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" placeholder="admin@iblue.com" autocomplete="email" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="Enter your password" autocomplete="current-password" required>
+            </div>
+            
+            <button class="login-btn" onclick="login()" id="loginButton">
+                <i class="fas fa-sign-in-alt"></i>
+                Sign In to Admin Dashboard
+            </button>
+            
+            <div class="forgot-link">
+                <a href="#" onclick="forgotPassword()">Forgot your password?</a>
+            </div>
+            
+            <div class="admin-help">
+                <h4><i class="fas fa-info-circle"></i> Admin Access Requirements</h4>
+                <p>To login as admin, you must:</p>
+                <ul>
+                    <li>Have an account in Supabase Auth</li>
+                    <li>Your UUID must be in the <code>admins</code> table</li>
+                    <li>Or have <code>account_type = 'admin'</code> in <code>user_profiles</code></li>
+                </ul>
+            </div>
+            
+            <div class="powered-by">
+                <p><strong>iBlue Commerce Admin System</strong></p>
+                <p>Version 2.1.4 • Secure Access Portal</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Supabase client
+        const supabaseUrl = "https://amxhpxqakqrjjihwkzcq.supabase.co";
+        const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFteGhweHFha3FyamppaHdremNxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5Nzc2NjUsImV4cCI6MjA4MzU1MzY2NX0.yIAZtz3bUc_ZxF8-f4cqW1fKJgFiRsiJdj4qgCDmM0g";
+        const sb = supabase.createClient(supabaseUrl, supabaseKey);
+        
+        // Show alert message
+        function showAlert(type, message) {
+            const container = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            
+            const icon = type === 'error' ? 'exclamation-circle' : 
+                        type === 'success' ? 'check-circle' : 
+                        type === 'warning' ? 'exclamation-triangle' : 'info-circle';
+            
+            alert.innerHTML = `
+                <i class="fas fa-${icon}"></i>
+                <span>${message}</span>
+            `;
+            
+            container.innerHTML = '';
+            container.appendChild(alert);
+            
+            // Auto-remove after 5 seconds
+            if (type !== 'success' || !message.includes('Redirecting')) {
+                setTimeout(() => {
+                    alert.style.opacity = '0';
+                    alert.style.transform = 'translateY(-10px)';
+                    setTimeout(() => {
+                        if (alert.parentNode === container) {
+                            container.removeChild(alert);
+                        }
+                    }, 300);
+                }, 5000);
+            }
+        }
+        
+        // Validate email format
+        function isValidEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+        
+        // **FIXED LOGIN FUNCTION** - Handles admins table structure properly
+        async function login() {
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const loginBtn = document.getElementById('loginButton');
+            
+            // Validate inputs
+            if (!email || !password) {
+                showAlert('error', 'Please enter both email and password');
+                return;
+            }
+            
+            if (!isValidEmail(email)) {
+                showAlert('error', 'Please enter a valid email address');
+                return;
+            }
+            
+            // Disable button and show loading
+            const originalHTML = loginBtn.innerHTML;
+            loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Authenticating...';
+            loginBtn.disabled = true;
+            
+            try {
+                console.log('=== LOGIN ATTEMPT ===');
+                console.log('Email:', email);
+                
+                // STEP 1: Try to authenticate with Supabase
+                console.log('Step 1: Authenticating with Supabase Auth...');
+                const { data: authData, error: authError } = await sb.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+                
+                if (authError) {
+                    console.error('Auth Error:', authError);
+                    if (authError.message.includes('Invalid login credentials')) {
+                        showAlert('error', 'Invalid email or password. Please try again.');
+                    } else if (authError.message.includes('Email not confirmed')) {
+                        showAlert('error', 'Please verify your email address before logging in.');
+                    } else {
+                        showAlert('error', 'Authentication failed: ' + authError.message);
+                    }
+                    resetLoginButton(loginBtn, originalHTML);
+                    return;
+                }
+                
+                console.log('✅ Auth successful! User ID:', authData.user.id);
+                
+                // STEP 2: Check if user has admin access - MULTIPLE CHECKS
+                console.log('Step 2: Checking admin privileges...');
+                let isAdmin = false;
+                let isSeller = false;
+                let adminSource = '';
+                
+                // **CHECK 1: Check admins table by ID (PRIMARY CHECK)**
+                console.log('Checking admins table by user ID:', authData.user.id);
+                const { data: adminById, error: adminByIdError } = await sb
+                    .from('admins')
+                    .select('id, email')
+                    .eq('id', authData.user.id)
+                    .maybeSingle();
+                
+                if (adminById && !adminByIdError) {
+                    console.log('✅ Found in admins table by ID!');
+                    isAdmin = true;
+                    adminSource = 'admins table (ID match)';
+                } else {
+                    console.log('❌ Not in admins table by ID');
+                }
+                
+                // **CHECK 2: Check admins table by email (SECONDARY CHECK)**
+                if (!isAdmin) {
+                    console.log('Checking admins table by email:', email);
+                    const { data: adminByEmail } = await sb
+                        .from('admins')
+                        .select('id, email')
+                        .eq('email', email)
+                        .maybeSingle();
+                    
+                    if (adminByEmail) {
+                        console.log('⚠️ Found in admins table by email, but ID mismatch!');
+                        console.log('Admin table ID:', adminByEmail.id);
+                        console.log('Auth user ID:', authData.user.id);
+                        
+                        showAlert('warning', 'Admin account found but user ID mismatch. Fixing...');
+                        
+                        // Try to fix the ID mismatch by updating the admins table
+                        try {
+                            const { error: updateError } = await sb
+                                .from('admins')
+                                .update({ id: authData.user.id })
+                                .eq('email', email);
+                            
+                            if (updateError) {
+                                console.error('Failed to update admins table:', updateError);
+                            } else {
+                                console.log('✅ Updated admins table with correct user ID');
+                                isAdmin = true;
+                                adminSource = 'admins table (fixed ID mismatch)';
+                            }
+                        } catch (updateError) {
+                            console.error('Error updating admins table:', updateError);
+                        }
+                    }
+                }
+                
+                // **CHECK 3: Check user_profiles table**
+                if (!isAdmin) {
+                    console.log('Checking user_profiles table...');
+                    const { data: profile } = await sb
+                        .from('user_profiles')
+                        .select('id, email, account_type')
+                        .eq('email', email)
+                        .maybeSingle();
+                    
+                    if (profile) {
+                        console.log('Found in user_profiles:', profile.account_type);
+                        if (profile.account_type === 'admin') {
+                            isAdmin = true;
+                            adminSource = 'user_profiles (admin)';
+                        } else if (profile.account_type === 'seller') {
+                            isSeller = true;
+                            adminSource = 'user_profiles (seller)';
+                        }
+                    } else {
+                        console.log('❌ Not in user_profiles table');
+                    }
+                }
+                
+                // **CHECK 4: Check users table (is_admin column)**
+                if (!isAdmin && !isSeller) {
+                    console.log('Checking users table...');
+                    const { data: userRecord } = await sb
+                        .from('users')
+                        .select('id, email, is_admin')
+                        .eq('email', email)
+                        .maybeSingle();
+                    
+                    if (userRecord && userRecord.is_admin) {
+                        console.log('✅ Found in users table as admin');
+                        isAdmin = true;
+                        adminSource = 'users table';
+                    }
+                }
+                
+                console.log('Final check - isAdmin:', isAdmin, 'isSeller:', isSeller, 'Source:', adminSource);
+                
+                // STEP 3: Handle access denial
+                if (!isAdmin && !isSeller) {
+                    console.log('❌ No admin privileges found!');
+                    showAlert('error', 
+                        `Access denied. You do not have admin privileges.\n\n` +
+                        `Your user ID: ${authData.user.id}\n` +
+                        `Please ensure this ID exists in the admins table.`
+                    );
+                    
+                    // Logout since they don't have access
+                    await sb.auth.signOut();
+                    resetLoginButton(loginBtn, originalHTML);
+                    return;
+                }
+                
+                // STEP 4: Ensure user exists in user_profiles
+                console.log('Step 4: Updating user_profiles...');
+                try {
+                    const { data: existingProfile } = await sb
+                        .from('user_profiles')
+                        .select('id')
+                        .eq('id', authData.user.id)
+                        .maybeSingle();
+                    
+                    if (!existingProfile) {
+                        // Create user profile
+                        await sb
+                            .from('user_profiles')
+                            .insert({
+                                id: authData.user.id,
+                                email: email,
+                                account_type: isAdmin ? 'admin' : 'seller',
+                                created_at: new Date().toISOString(),
+                                updated_at: new Date().toISOString(),
+                                last_login: new Date().toISOString()
+                            });
+                        console.log('✅ Created user profile');
+                    } else {
+                        // Update last login
+                        await sb
+                            .from('user_profiles')
+                            .update({ 
+                                last_login: new Date().toISOString(),
+                                updated_at: new Date().toISOString()
+                            })
+                            .eq('id', authData.user.id);
+                        console.log('✅ Updated last login');
+                    }
+                } catch (profileError) {
+                    console.error('Profile update error:', profileError);
+                }
+                
+                // STEP 5: Store session and redirect
+                console.log('Step 5: Finalizing login...');
+                localStorage.setItem('lastAdminLogin', new Date().toISOString());
+                localStorage.setItem('adminEmail', email);
+                localStorage.setItem('userId', authData.user.id);
+                localStorage.setItem('adminSource', adminSource);
+                
+                showAlert('success', 
+                    `✅ Login successful!\n` +
+                    `Role: ${isAdmin ? 'Administrator' : 'Seller'}\n` +
+                    `Source: ${adminSource}\n` +
+                    `Redirecting to dashboard...`
+                );
+                
+                console.log('✅ Login complete! Redirecting...');
+                
+                // Redirect after short delay
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 1500);
+                
+            } catch (error) {
+                console.error('Login error:', error);
+                showAlert('error', 'An unexpected error occurred. Please try again.');
+                resetLoginButton(loginBtn, originalHTML);
+            }
+        }
+        
+        // Helper function to reset login button
+        function resetLoginButton(button, originalHTML) {
+            button.innerHTML = originalHTML;
+            button.disabled = false;
+        }
+        
+        // Handle Enter key press
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                login();
+            }
+        });
+        
+        // Forgot password
+        async function forgotPassword() {
+            const email = document.getElementById('email').value.trim();
+            
+            if (!email) {
+                showAlert('error', 'Please enter your email address');
+                return;
+            }
+            
+            if (!isValidEmail(email)) {
+                showAlert('error', 'Please enter a valid email address');
+                return;
+            }
+            
+            showAlert('info', 'Sending password reset email...');
+            
+            try {
+                const { error } = await sb.auth.resetPasswordForEmail(email, {
+                    redirectTo: window.location.origin + '/reset-password.html',
+                });
+                
+                if (error) {
+                    showAlert('error', 'Error: ' + error.message);
+                } else {
+                    showAlert('success', 'Password reset email sent! Check your inbox.');
+                }
+            } catch (error) {
+                showAlert('error', 'Failed to send reset email');
+            }
+        }
+        
+        // Check for existing session
+        async function checkExistingSession() {
+            try {
+                const { data: { session } } = await sb.auth.getSession();
+                
+                if (session) {
+                    console.log('Found existing session for:', session.user.email);
+                    
+                    // Check if user has admin access
+                    const [adminCheck, profileCheck] = await Promise.all([
+                        sb.from('admins').select('*').eq('id', session.user.id).maybeSingle(),
+                        sb.from('user_profiles').select('*').eq('id', session.user.id).maybeSingle()
+                    ]);
+                    
+                    const isAdmin = adminCheck.data || (profileCheck.data && profileCheck.data.account_type === 'admin');
+                    const isSeller = profileCheck.data && profileCheck.data.account_type === 'seller';
+                    
+                    if (isAdmin || isSeller) {
+                        window.location.href = 'dashboard.html';
+                    } else {
+                        await sb.auth.signOut();
+                    }
+                }
+            } catch (error) {
+                console.error('Session check error:', error);
+            }
+        }
+        
+        // Check URL parameters
+        function checkUrlParams() {
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            if (urlParams.get('logout') === 'true') {
+                showAlert('success', 'You have been successfully logged out.');
+            }
+            
+            if (urlParams.get('redirect') === 'unauthorized') {
+                showAlert('error', 'Access denied. Admin privileges required.');
+            }
+            
+            // Auto-fill email
+            const emailParam = urlParams.get('email');
+            if (emailParam) {
+                document.getElementById('email').value = emailParam;
+                document.getElementById('password').focus();
+            }
+        }
+        
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Admin login page loaded');
+            checkExistingSession();
+            checkUrlParams();
+            
+            // Focus on email field
+            document.getElementById('email').focus();
+            
+            // Add spinner animation
+            const style = document.createElement('style');
+            style.textContent = `
+                .fa-spin {
+                    animation: fa-spin 1s linear infinite;
+                }
+                @keyframes fa-spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+            `;
+            document.head.appendChild(style);
+        });
+    </script>
+</body>
+</html>
